@@ -1,54 +1,47 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Bootstrap
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
-#  push:
-#    branches: [ "main" ]
-  pull_request:
+  push:
     branches: [ "main" ]
+  pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
 #  workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  CLUSTER_NAME: cloudlab
   CLUSTERCTL_PATH: ~/bin/clusterctl
-  CONTROL_PLANE_MACHINE_COUNT: 3
-  HCLOUD_CONTROL_PLANE_MACHINE_TYPE: cpx11
-  HCLOUD_WORKER_MACHINE_TYPE: cpx11
-  HCLOUD_REGION: fsn1
-  HCLOUD_SSH_KEY: cluster-nodes
-  KUBERNETES_VERSION: 1.25.2
-  WORKER_MACHINE_COUNT: 3
-  TARGET_CLUSTER_KUBECONFIG: /tmp/target-cluster
-  MANAGEMENT_CLUSTER_KUBECONFIG: /tmp/management-cluster
-  
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  bootstrap:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+
+      - name: setup directories
+        run: |
+          mkdir -p ~/tmp
+          mkdir -p ~/bin
 
       - name: Kind create cluster
         uses: helm/kind-action@v1
-        with:
-          cluster_name: kind
-
 
       # Runs a set of commands using the runners shell
       - name: Install Clusterctl
         run: |
-          mkdir -p ~/bin
           curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.4.3/clusterctl-linux-amd64 -o ${{ env.CLUSTERCTL_PATH }}
           chmod  +x ${{ env.CLUSTERCTL_PATH }}
 
@@ -58,44 +51,46 @@ jobs:
             --core cluster-api \
             --bootstrap kubeadm \
             --control-plane kubeadm \
-            --infrastructure hetzner 
-          
-          # wait for management cluster to be ready
+            --infrastructure hetzner
+
+
+      - name: Ensure management cluster is ready
+        run: |
+          kubectl cluster-info
+          kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=30s
 
       - name: Create HCLOUD token secret
-        env:
-          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
-          KUBECONFIG: ${{ env.MANAGEMENT_CLUSTER_KUBECONFIG }}
         run: |
-          kubectl create secret generic hetzner \
-            --from-literal=hcloud=${HCLOUD_TOKEN}
+          kubectl create secret generic hetzner --from-literal=hcloud='${{ secrets.HCLOUD_TOKEN }}'
           
           # patch secret so that it gets moved to the managed cluster
-          kubectl patch secret hetzner \
-            -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
+          kubectl patch secret hetzner -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
 
       - name: Create cluster
         env:
-          KUBECONFIG: ${{ env.MANAGEMENT_CLUSTER_KUBECONFIG }}
+          CLUSTER_NAME: cloudlab
+          CONTROL_PLANE_MACHINE_COUNT: 3
+          HCLOUD_CONTROL_PLANE_MACHINE_TYPE: cpx11
+          HCLOUD_WORKER_MACHINE_TYPE: cpx11
+          HCLOUD_REGION: fsn1
+          HCLOUD_SSH_KEY: cluster-nodes
+          KUBERNETES_VERSION: 1.25.2
+          WORKER_MACHINE_COUNT: 3
         run: |
-          ${{ env.CLUSTERCTL_PATH }} generate cluster cloudlab \
-            --flavor hcloud-network \
-            | kubectl apply -f -
+          ${{ env.CLUSTERCTL_PATH }} generate cluster cloudlab --flavor hcloud-network | kubectl apply -f -
           
-          # wait for cluster to be ready
-          # for some reason only the first controller comes up before installing everything else
-          k wait kubeadmcontrolplane cloudlab-control-plane \
-            --for jsonpath='{status.replicas}'=1
+          #           wait for cluster to be ready
+          #           for some reason only the first controller comes up before installing everything else
+          sleep 10
+#          kubectl wait kubeadmcontrolplane cloudlab-control-plane --for jsonpath='{status.replicas}'=1
 
       - name: Get kubeconfig
-        env:
-          KUBECONFIG: ${{ env.MANAGEMENT_CLUSTER_KUBECONFIG }}
         run: |
-          ${{ env.CLUSTERCTL_PATH }} get kubeconfig cloudlab > ${TARGET_CLUSTER_KUBECONFIG}
+          ${{ env.CLUSTERCTL_PATH }} get kubeconfig cloudlab > ${{ github.workspace }}/.kubeconfig
 
-      - name: Deploy a CNI
+      - name: Deploy CNI
         env:
-          KUBECONFIG: ${{ env.TARGET_CLUSTER_KUBECONFIG }}
+          KUBECONFIG: ${{ github.workspace }}/.kubeconfig
         run: |
           helm repo add cilium https://helm.cilium.io/
 
@@ -105,7 +100,7 @@ jobs:
 
       - name: Deploy Hetzner cloud controller manager
         env:
-          KUBECONFIG: ${{ env.TARGET_CLUSTER_KUBECONFIG }}
+          KUBECONFIG: ${{ github.workspace }}/.kubeconfig
         run: |
           helm repo add syself https://charts.syself.com
           helm repo update syself
@@ -118,13 +113,13 @@ jobs:
 
       - name: Install the metrics server
         env:
-          KUBECONFIG: ${{ env.TARGET_CLUSTER_KUBECONFIG }}
+          KUBECONFIG: ${{ github.workspace }}/.kubeconfig
         run: |
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
 
       - name: Install the Hetzner CSI driver
         env:
-          KUBECONFIG: ${{ env.TARGET_CLUSTER_KUBECONFIG }}
+          KUBECONFIG: ${{ github.workspace }}/.kubeconfig
         run: |
           cat << EOF > csi-values.yaml
           storageClasses:
