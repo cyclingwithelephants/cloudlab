@@ -29,8 +29,9 @@
    ```
 6. Generate the cluster. We save the yaml to a file to make deletion easier.
    ```bash
-   clusterctl generate cluster cloudlab > cluster.yaml
-   clusterctl generate cluster cloudlab | kubectl apply -f -
+   # the --flavour hcloud-network puts the machines inside a VPC and allows them to communicate via private IP
+   clusterctl generate cluster cloudlab --flavor hcloud-network > cluster.yaml
+   clusterctl generate cluster cloudlab --flavor hcloud-network | kubectl apply -f -
    ```
 7. Wait for the cluster to be created
    ```bash
@@ -51,7 +52,7 @@
    ```
 
 
-9. Deploy a CNI. Ideally this should be gitops'ed. The cluster will not report as healthy until a CNI is installed. This will cause the Master node to only have a single node, and the worker nodes to be recycled constantly.
+9. Deploy a CNI. The cluster will not report as healthy until a CNI is installed. This will cause the Master node to only have a single node, and the worker nodes to be recycled constantly.
    ```bash
    helm repo add cilium https://helm.cilium.io/
    
@@ -68,7 +69,7 @@
      --namespace kube-system \
      --set secret.name=hetzner \
      --set secret.tokenKeyName=hcloud \
-     --set privateNetwork.enabled=false
+     --set privateNetwork.enabled=true
    ```
 11. Move the cluster installation from the managing cluster to the managed cluster, so that the cluster manages itself
     ```bash
