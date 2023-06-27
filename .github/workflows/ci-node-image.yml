@@ -3,10 +3,14 @@ name: Node image
 on:
   push:
     branches: [ "main" ]
-    paths: [ "images/**"]
+    paths:
+    - "images/**"
+    - ".github/workflows/ci-node-image.yml"
   pull_request:
     branches: [ "main" ]
-    paths: [ "images/**"]
+    paths:
+    - "images/**"
+    - ".github/workflows/ci-node-image.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,6 +34,8 @@ jobs:
         uses: hashicorp/setup-packer@main
 #        with:
 #          version: latest
+      - name: Packer init
+        run: packer init ${IMAGE_FILE}
 
       - name: Packer validate
         run: packer validate ${IMAGE_FILE}
