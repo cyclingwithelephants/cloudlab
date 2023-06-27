@@ -44,9 +44,13 @@ jobs:
         run: packer build ${IMAGE_FILE}
 
       - name: Print manifest
-        run: cat ${MANIFEST_FILE}
+        run: |
+          pwd
+          ls -altr
+          cat ${MANIFEST_FILE}
 
       - name: Setup Hcloud
+        if: github.ref != 'refs/heads/main'      
         uses: 3bit/setup-hcloud@v2
 
         # packer has no dry-run equivalent option, so we must simply delete
