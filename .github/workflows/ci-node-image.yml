@@ -66,3 +66,4 @@ jobs:
           name: talos-image-manifest
           path: ${MANIFEST_FILE}
           retention-days: 365
+          if-no-files-found: error
