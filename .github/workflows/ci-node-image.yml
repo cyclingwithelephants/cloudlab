@@ -1,0 +1,62 @@
+name: Node image
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "images/**"]
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "images/**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+  PACKER_CACHE_DIR: ~/packer-cache
+  IMAGE_FILE: images/talos/image.json.pkr.hcl
+  MANIFEST_FILE: manifest.json
+
+
+jobs:
+  talos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+#        with:
+#          version: latest
+
+      - name: Packer validate
+        run: packer validate ${IMAGE_FILE}
+
+      - name: Packer build
+        run: packer build ${IMAGE_FILE}
+
+      - name: Print manifest
+        run: cat ${MANIFEST_FILE}
+
+      - name: Setup Hcloud
+        uses: 3bit/setup-hcloud@v2
+
+        # packer has no dry-run equivalent option, so we must simply delete
+        # the artifact after creating it if this was done on a non-main branch
+      - name: Delete artifact
+        if: github.ref != 'refs/heads/main'
+        run: |
+          artifact_id=$(cat manifest.json | jq -r '.builds[0].artifact_id')
+          hcloud image delete ${artifact_id}
+
+        # https://github.com/marketplace/actions/upload-a-build-artifact
+        # https://github.com/marketplace/actions/download-artifact
+      - name: Create artifact from manifest
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: talos-image-manifest
+          path: ${MANIFEST_FILE}
+          retention-days: 365
