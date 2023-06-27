@@ -64,6 +64,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: talos-image-manifest
-          path: ${MANIFEST_FILE}
+          path: ${{ github.workspace }}/${MANIFEST_FILE}
           retention-days: 365
           if-no-files-found: error
