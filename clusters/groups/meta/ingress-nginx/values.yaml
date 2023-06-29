@@ -1,0 +1,7 @@
+controller:
+  extraArgs:
+    enable-ssl-passthrough: ""
+service:
+  internal:
+    annotations:
+      load-balancer.hetzner.cloud/location: fsn1 # specify a cloud region for hetzner cloud
