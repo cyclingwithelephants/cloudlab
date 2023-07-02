@@ -1,5 +1,0 @@
-networking:
-  enabled: true
-  clusterCIDR: '10.0.0.0/8'
-args:
-  route-reconciliation-period: 30s

@@ -6,11 +6,16 @@ on:
     paths:
     - "images/**"
     - ".github/workflows/ci-node-image.yml"
+
   pull_request:
     branches: [ "main" ]
     paths:
     - "images/**"
     - ".github/workflows/ci-node-image.yml"
+
+  schedule:
+    # 11am on the first day of every month
+    - cron: "0 11 1 * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,10 +35,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup `packer`
+      - name: Setup packer
         uses: hashicorp/setup-packer@main
-#        with:
-#          version: latest
+
       - name: Packer init
         run: packer init ${IMAGE_FILE}
 
@@ -55,7 +59,7 @@ jobs:
 
         # packer has no dry-run equivalent option, so we must simply delete
         # the artifact after creating it if this was done on a non-main branch
-      - name: Delete artifact
+      - name: Delete build artifact
         if: github.ref != 'refs/heads/main'
         run: |
           artifact_id=$(cat manifest.json | jq -r '.builds[0].artifact_id')

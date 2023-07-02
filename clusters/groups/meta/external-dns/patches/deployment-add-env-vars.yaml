@@ -1,0 +1,14 @@
+kind: Deployment
+metadata:
+  name: external-dns
+spec:
+  template:
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: cloudflare-auth
+            # needs a secret with fields:
+            # CF_API_KEY
+            # CF_API_EMAIL
+            # https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/cloudflare.md#creating-cloudflare-credentials

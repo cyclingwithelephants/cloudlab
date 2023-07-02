@@ -1,0 +1,4 @@
+namespace: example-one-env-deployment
+resources:
+  - ../../../base/example-one-env-deployment
+  - namespace.yaml
