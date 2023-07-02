@@ -28,7 +28,7 @@ spec:
               repoURL: *repo
               revision: HEAD
               files:
-              - path: clusters/groups/*/addons/.env.yaml
+              - path: clusters/groups/*/.env.yaml
           # discovers environment specific applications overrides
           - git:
               repoURL: *repo
