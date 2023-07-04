@@ -1,9 +1,11 @@
+# ArgoCD uses secrets to configure which clusters are available to it.
+# It's ok that this is here because it doesn't contain any credentials
 apiVersion: v1
 kind: Secret
 metadata:
   name: in-cluster
   labels:
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argo-cd
     argocd.argoproj.io/secret-type: cluster
 type: Opaque
 stringData:

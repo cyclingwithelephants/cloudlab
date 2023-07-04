@@ -4,11 +4,12 @@ namespace: external-secrets
 
 resources:
   - ../../../base/external-secrets
+  - ./cluster-secret-store.yaml
 
 helmCharts:
   - name: external-secrets
     includeCRDs: true
-    valuesFile: values.yaml
     releaseName: external-secrets
-    version: 4.7.0
+    version: 0.9.0
     repo: https://charts.external-secrets.io
+    namespace: external-secrets

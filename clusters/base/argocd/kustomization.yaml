@@ -1,19 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: argocd
 
 resources:
-# argocd namespace
-- argocd-ns.yaml
-# argocd core installation manifests
-- https://raw.githubusercontent.com/argoproj/argo-cd/v2.6.7/manifests/core-install.yaml
-# application set that automates applications management 
-- applicationset.yaml
-# cluster metadata
-- in-cluster.yaml
-# argocd project for system applications
-- system-project.yaml
+  - namespace.yaml
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v2.6.7/manifests/core-install.yaml
+  - applicationset.yaml
+  - in-cluster.yaml
+  - system-project.yaml
 
 patches:
-- path: patches/cm-kustomize-enable-helm.yaml
-
-namespace: argocd
+  - path: patches/argocd-cm.yaml

@@ -1,3 +1,4 @@
 #namespace: # we don't specify namespace as otherwise this causes conflicts
 
-resources: []
+resources:
+  - namespace.yaml

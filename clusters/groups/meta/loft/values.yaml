@@ -1,6 +1,7 @@
 # If an admin user should be created during deployment
 admin:
-  create: false # environment variables are passed in to generate admin user
+  email: adamrummer@gmail.com
+  password: false # environment variables are passed in to generate admin user
 
 # Loft service options
 service:
@@ -74,13 +75,13 @@ envValueFrom:
 
   ADMIN_PASSWORD_HASH:
     secretKeyRef:
-      name: admin-user
-      key: password
+      name: admin-password-hash
+      key: ADMIN_PASSWORD_HASH
 
-  ADMIN_EMAIL:
-    secretKeyRef:
-      name: admin-user
-      key: email
+#  ADMIN_EMAIL:
+#    secretKeyRef:
+#      name: admin-user
+#      key: ADMIN_EMAIL
 
 # Replica amount of the loft deployment
 replicaCount: 1

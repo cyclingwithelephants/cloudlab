@@ -5,6 +5,10 @@ namespace: external-dns
 resources:
   - ../../../base/external-dns
   - https://github.com/kubernetes-sigs/external-dns//kustomize?master
+  - external-secret-cloudflare-api-token.yaml
 
+patches:
+  - path: patches/deployment-add-args.yaml
+  - path: patches/deployment-add-env-vars.yaml
 
 # tutorial at https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/cloudflare.md
