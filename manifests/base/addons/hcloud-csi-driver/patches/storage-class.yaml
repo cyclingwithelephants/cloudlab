@@ -1,0 +1,13 @@
+# further docs at https://github.com/hetznercloud/csi-driver/blob/main/docs/kubernetes/README.md#getting-started
+# e.g. we can encrypt the volumes using a user-specified key
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  name: hcloud-volumes
+provisioner: csi.hetzner.cloud
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: retain

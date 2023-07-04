@@ -1,0 +1,80 @@
+name: 'Packer'
+description: 'packer build and push to hcloud'
+
+inputs:
+  hcloud-token:
+    description: 'Hetzner Cloud API token. Different tokens will point to different projects.'
+    required: true
+    
+  packer-dir:
+    description: 'path to directory containing packer files'
+    required: true
+
+env:
+  PACKER_CACHE_DIR: ~/packer-cache
+  MANIFEST_PATH: manifest.json # the manifest is always created relative to the working directory
+
+runs:
+  using: "composite"
+
+  steps:
+  - name: Setup packer
+    uses: hashicorp/setup-packer@main
+
+  - name: Packer fmt check
+    shell: bash
+    run: packer fmt --check ${{inputs.packer-dir}}
+
+  - name: Packer init
+    shell: bash
+    run: packer init ${{inputs.packer-dir}}
+
+  - name: Packer validate
+    shell: bash
+    env:
+      HCLOUD_TOKEN: ${{ inputs.hcloud-token }}
+    run: packer validate ${{inputs.packer-dir}}
+
+  - name: Packer build
+    shell: bash
+    env:
+      HCLOUD_TOKEN: ${{ inputs.hcloud-token }}
+    run: packer build ${{inputs.packer-dir}}
+
+  - name: Print manifest
+    shell: bash
+    run: cat ${MANIFEST_PATH}
+
+  - name: Setup Hcloud
+    if: github.ref != 'refs/heads/main'
+    uses: 3bit/setup-hcloud@v2
+
+    # packer has no dry-run equivalent option, so we must simply delete
+    # the artifact after creating it if this was done on a non-main branch
+  - name: Delete build artifacts
+    if: always() && github.ref != 'refs/heads/main'
+    shell: bash
+    env:
+      HCLOUD_TOKEN: ${{ inputs.hcloud-token }}
+    run: |
+      artifacts=$(cat ${MANIFEST_PATH} | jq -r '.builds[].artifact_id')
+      for artifact in "${artifacts}"; do
+        hcloud image delete ${artifact}
+      done
+
+  - id: packer-dir
+    shell: bash
+    run: echo "var=$(echo ${{inputs.packer-dir}} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
+
+    # it's intended that in the future we will be able to dynamically update
+    # clusters as the image versions update. We aren't there yet :)
+    # https://github.com/marketplace/actions/upload-a-build-artifact
+    # https://github.com/marketplace/actions/download-artifact
+  - name: Create artifact from manifest
+    if: github.ref == 'refs/heads/main'
+    uses: actions/upload-artifact@v3
+    with:
+      name: ${{steps.packer-dir.outputs.var}}
+      path: manifest.json
+      retention-days: 90
+      if-no-files-found: error

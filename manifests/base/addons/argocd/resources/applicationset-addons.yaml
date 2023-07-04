@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-addons
+spec:
+  generators:
+    - merge:
+        mergeKeys:
+          - metadata.labels.env
+          - path.basename
+        generators:
+          - matrix:
+              generators:
+                # enriches applications per directory in manifests/base with cluster labels
+                - clusters: {}
+                # produces argocd app per directory in manifests/base
+                - git:
+                    repoURL: &repo https://github.com/cyclingwithelephants/cloudlab.git
+                    directories:
+                      - path: manifests/base/addons/*
+          - merge:
+              mergeKeys:
+                - path
+              generators:
+                # adds env metadata from .env.yaml to each application
+                # workaround for https://github.com/argoproj/argo-cd/issues/13118 - should use env directory name instead
+                - git:
+                    repoURL: *repo
+                    revision: HEAD
+                    files:
+                      - path: manifests/groups/*/addons/*/.env.yaml
+                # discovers environment specific applications overrides
+                - git:
+                    repoURL: *repo
+                    revision: HEAD
+                    directories:
+                      - path: manifests/groups/*/addons/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+    spec:
+      project: system
+      source:
+        repoURL: *repo
+        path: '{{path}}'
+      destination:
+        server: '{{server}}'
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          # this option is needed for prometheus-operator because it has HUGE CRDs
+          # TODO: find a way to apply this option only to prometheus-operator using this ApplicationSet
+          - ServerSideApply=true

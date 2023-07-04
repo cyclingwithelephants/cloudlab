@@ -1,0 +1,35 @@
+name: Node image
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+    - "packer/**"
+    - ".github/workflows/ci-packer.yml"
+
+  pull_request:
+    branches: [ "main" ]
+    paths:
+    - "packer/**"
+    - ".github/workflows/ci-packer.yml"
+
+  schedule:
+    # 11am on the first day of every month
+    - cron: "0 11 1 * *"
+
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.ref }}
+#  cancel-in-progress: false
+
+jobs:
+  talos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        # In the future I want to better handle prod/stage/development use cases here
+      - name: Packer
+        uses: ./.github/actions/packer
+        with:
+          hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
+          packer-dir: packer/talos

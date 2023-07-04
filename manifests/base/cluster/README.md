@@ -1,0 +1,1 @@
+It would be awesome to figure out how to substitute environment variables here. It might be sensible to just turn this into a helm chart but I'd prefer not to do that because it'd mean hosting and versioning the chart externally to this repo

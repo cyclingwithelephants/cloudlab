@@ -1,107 +1,71 @@
+This process assumes you have build a VM image and saved that to hetzner.
 
-1. We need to create a management cluster, this can be created locally using e.g. kind
+1. We need to create and initiate a temporary management cluster, this can be created locally using e.g. kind
     ```bash
     kind create cluster
+    clusterctl init \
+      --core cluster-api \
+      --bootstrap talos \
+      --control-plane talos \
+      --infrastructure hetzner
     ```
-2. Now we initialise the management cluster, so that it can create the cluster we intend to create.
+2. We must export some environment variables to configure the bootstrap process
     ```bash
-    clusterctl init --core cluster-api --bootstrap kubeadm --control-plane kubeadm --infrastructure hetzner
-    ```
-3. We must export some environment variables to configure the bootstrap process
-    ```bash
-    export HCLOUD_SSH_KEY=cluster-nodes \
-    export CLUSTER_NAME=cloudlab \
-    export HCLOUD_REGION="fsn1" \
-    export CONTROL_PLANE_MACHINE_COUNT=3 \
-    export WORKER_MACHINE_COUNT=3 \
-    export KUBERNETES_VERSION=1.25.2 \
-    export HCLOUD_CONTROL_PLANE_MACHINE_TYPE=cpx11 \
-    export HCLOUD_WORKER_MACHINE_TYPE=cpx11
+    # we assume here that we are initialising the production cluster, since it (will) manage the other clusters
+    source manifests/groups/prod/cluster/env.bash
    ```
-4. We also need to configure the auth token, so that the cluster can auth with Hetzner. I stored mine on my local machine.
+3. We also need to configure the auth token, so that the cluster can auth with Hetzner. I stored mine on my local machine.
    ```bash
-   export HCLOUD_TOKEN=$(cat /Users/adam/.hetzner/cloud/projects/cloudlab/tokens/capi)
+   # this is a directory I have created, hetzner don't officially use this directory
+   export HCLOUD_TOKEN=$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-prod/tokens/capi)
    ```
-5. Create the k8s secret, allowing the management cluster to auth with Hetzner. We also patch the created secret so it is automatically moved to the target cluster later. This will enable the cluster to manage itself.
+4. Create the k8s secret, allowing the management cluster to auth with Hetzner. We also patch the created secret so it is automatically moved to the target cluster later. This will enable the cluster to manage itself.
    ```bash
-   kubectl create secret generic hetzner --from-literal=hcloud=$HCLOUD_TOKEN
-   kubectl patch secret hetzner -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
+   kubectl create secret generic hcloud --from-literal=token=$HCLOUD_TOKEN -n cluster
+   kubectl patch secret hcloud -n cluster -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
    ```
-6. Generate the cluster. We save the yaml to a file to make deletion easier.
+5. Generate the cluster
    ```bash
-   # the --flavour hcloud-network puts the machines inside a VPC and allows them to communicate via private IP
-   clusterctl generate cluster cloudlab --flavor hcloud-network > cluster.yaml
-   clusterctl generate cluster cloudlab --flavor hcloud-network | kubectl apply -f -
+   kustomize build manifests/groups/prod/cluster | envsubst | kubectl apply -f -
    ```
-7. Wait for the cluster to be created
+6. Wait for the cluster to be created
    ```bash
    # view the cluster and its resources
-   kubectl get cluster cloudlab --watch
+   kubectl get cluster ${CLUSTER_NAME} --watch
    
    # verify that the cluster is ready
-   kubectl get kubeadmcontrolplane
+   kubectl get taloscontrolplane 
    ```
 
-8. Once the first master node is up, we can fetch the kube-config
+7. Once the first master node is up, we can fetch the kube-config
    ```bash
    export CAPH_WORKER_CLUSTER_KUBECONFIG=/tmp/workload-kubeconfig
    unset KUBECONFIG
-   clusterctl get kubeconfig cloudlab >> $CAPH_WORKER_CLUSTER_KUBECONFIG
+   clusterctl get kubeconfig ${CLUSTER_NAME} > ${CAPH_WORKER_CLUSTER_KUBECONFIG}
    export KUBECONFIG=/tmp/workload-kubeconfig
    kubectl get pods -A
    ```
-
-
-9. Deploy a CNI. The cluster will not report as healthy until a CNI is installed. This will cause the Master node to only have a single node, and the worker nodes to be recycled constantly.
+8. Deploy the Hetzner cloud controller manager (CCM)
    ```bash
-   helm repo add cilium https://helm.cilium.io/
+   kustomize build --enable-helm manifests/groups/prod/addons/hcloud-ccm | kubectl apply -f -
+   # allows the hccm to auth with hetzner
+   # we also specify the network to attach the cluster to.
+   kubectl create secret generic hcloud \
+     -n kube-system \
+     --from-literal=token=$HCLOUD_TOKEN \
+     --from-literal=network=$HCLOUD_NETWORK
    
-   KUBECONFIG=$CAPH_WORKER_CLUSTER_KUBECONFIG helm upgrade --install cilium cilium/cilium --version 1.12.2 \
-   --namespace kube-system \
-   -f https://raw.githubusercontent.com/syself/cluster-api-provider-hetzner/main/templates/cilium/cilium.yaml
    ```
-10. Deploy the Hetzner cloud controller manager (CCM)
+9. Move the cluster installation from the managing cluster to the managed cluster, so that the cluster manages itself
    ```bash
-   helm repo add syself https://charts.syself.com
-   helm repo update syself
-
-   KUBECONFIG=$CAPH_WORKER_CLUSTER_KUBECONFIG helm upgrade --install ccm syself/ccm-hcloud --version 1.0.11 \
-     --namespace kube-system \
-     --set secret.name=hetzner \
-     --set secret.tokenKeyName=hcloud \
-     --set privateNetwork.enabled=true
-   ```
-11. Move the cluster installation from the managing cluster to the managed cluster, so that the cluster manages itself
-    ```bash
-    # install the cluster controllers onto the host cluster
-    clusterctl init --core cluster-api --bootstrap kubeadm --control-plane kubeadm --infrastructure hetzner
+   # install the cluster controllers onto the host cluster
+   clusterctl init \
+    --core cluster-api \
+    --bootstrap talos \
+    --control-plane talos \
+    --infrastructure hetzner
     
-    # move the cluster to the target cluster
-    unset KUBECONFIG
-    kind export kubeconfig
-    clusterctl move --to-kubeconfig $CAPH_WORKER_CLUSTER_KUBECONFIG
-    ```
-
-## Optional steps
-
-1. Install the metrics server
-    ```bash
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
-    ```
-
-2. Install the Hetzner CSI driver
-    ```bash
-    cat << EOF > csi-values.yaml
-    storageClasses:
-    - name: hcloud-volumes
-      defaultStorageClass: true
-      reclaimPolicy: Retain
-    EOF
-
-    KUBECONFIG=$CAPH_WORKER_CLUSTER_KUBECONFIG helm upgrade --install csi syself/csi-hcloud \
-      --version 0.2.0 \
-      --namespace kube-system \
-      -f csi-values.yaml
-   
-    rm csi-values.yaml
-    ```
+   # move the cluster to the target cluster
+   unset KUBECONFIG
+   clusterctl move --to-kubeconfig $CAPH_WORKER_CLUSTER_KUBECONFIG
+   ```

@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+#namespace: # we don't specify namespace as otherwise this causes conflicts
+namespace: monitoring
+
+resources:
+  - ../../../../base/addons/kube-prometheus-stack
+
+helmCharts:
+  - name: kube-prometheus-stack
+    includeCRDs: true
+#    valuesFile: values.yaml # https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+    releaseName: kube-prometheus-stack
+    version: 47.2.0
+    repo: https://prometheus-community.github.io/helm-charts
+    namespace: monitoring

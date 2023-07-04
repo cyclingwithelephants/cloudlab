@@ -4,3 +4,6 @@
 
 # packer build artifact
 **/manifest.json
+**/charts/
+**/secrets/
+**/temp.json
