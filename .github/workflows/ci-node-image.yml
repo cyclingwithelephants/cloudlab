@@ -48,10 +48,7 @@ jobs:
         run: packer build ${IMAGE_FILE}
 
       - name: Print manifest
-        run: |
-          pwd
-          ls -altr
-          cat ${MANIFEST_FILE}
+        run: cat ${MANIFEST_FILE}
 
       - name: Setup Hcloud
         if: github.ref != 'refs/heads/main'      
