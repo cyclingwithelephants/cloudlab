@@ -12,7 +12,6 @@ env:
   ENVS_DIR: manifests/groups
   GOPATH: ${{ github.workspace }}/go
 
-
 jobs:
   kube-diff:
     runs-on: ubuntu-latest
