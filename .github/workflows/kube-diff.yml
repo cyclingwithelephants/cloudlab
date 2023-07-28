@@ -35,7 +35,7 @@ jobs:
       with:
         go-version: 1.20.1
 
-    - run: go install github.com/cyclingwithelephants/cloudlab/hack/kubediff@git-diff
+    - run: go install github.com/cyclingwithelephants/cloudlab/hack/kubediff@f790b9dcb30502ca2b898ba8d23e6d2fffc0139f
 
     - run: |
         kubediff
