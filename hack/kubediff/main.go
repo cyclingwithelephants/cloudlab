@@ -410,9 +410,10 @@ func main() {
 	toWriteToFile := renderedTemplates
 	if totalCharacters(renderedTemplates) > maxGithubCommentLength {
 		app.Logger.Println("Rendered templates are too long.")
+
 		toWriteToFile = []string{"Rendered templates are too long to fit in one comment. Multiple comments coming soon!"}
 	}
-	//app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
+	// app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
 	err = writeToFile(toWriteToFile, filepath.Join(cwd, writePath))
 	if err != nil {
 		panic(err)
