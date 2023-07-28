@@ -11,6 +11,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -332,6 +334,46 @@ func totalCharacters(strings []string) int {
 	return total
 }
 
+func splitDiffIntoChunks(diff string) []string {
+	var chunks []string
+	//tempChunks := strings.Split(diff, "---\n")
+	tempChunks := regexp.MustCompile("(?m)^.*---.*$").Split(diff, -1)
+
+	totalCharsForChunk := 0
+	newChunk := ""
+	for _, chunk := range tempChunks {
+		chunkLength := len(chunk)
+		if totalCharsForChunk+chunkLength > maxGithubCommentLength-len(diffRenderTemplate) {
+			chunks = append(chunks, newChunk)
+			newChunk = ""
+			totalCharsForChunk = 0
+		}
+		newChunk += chunk
+		totalCharsForChunk += chunkLength
+	}
+	// Flush the last chunk
+	return append(chunks, newChunk)
+}
+
+// consolidate chunks combines strings into chunks that each total less than maxGithubCommentLength
+func consolidateChunks(templates []string) [][]string {
+	var chunks [][]string
+	var chunk []string
+	totalCharsForChunk := 0
+	for _, template := range templates {
+		templateLength := len(template)
+		if totalCharsForChunk+templateLength > maxGithubCommentLength {
+			chunks = append(chunks, chunk)
+			chunk = []string{}
+			totalCharsForChunk = 0
+		}
+		chunk = append(chunk, template)
+		totalCharsForChunk += templateLength
+	}
+	// Flush the last chunk
+	return append(chunks, chunk)
+}
+
 func main() {
 	app := App{
 		Config: AppConfig{
@@ -380,24 +422,30 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		template := template.New(diffRenderTemplate)
-		template, err = template.Parse(diffRenderTemplate)
-		if err != nil {
-			panic(err)
+		chunks := splitDiffIntoChunks(diff)
+
+		templates := []string{}
+		for _, diffChunk := range chunks {
+			template := template.New(diffRenderTemplate)
+			template, err = template.Parse(diffRenderTemplate)
+			if err != nil {
+				panic(err)
+			}
+			var buf bytes.Buffer
+			err = template.Execute(
+				&buf,
+				map[string]string{
+					"DIFF":  diffChunk,
+					"TITLE": diffPath,
+				},
+			)
+			if err != nil {
+				panic(err)
+			}
+			templates = append(templates, buf.String())
 		}
 
-		var buf bytes.Buffer
-		err = template.Execute(
-			&buf,
-			map[string]string{
-				"DIFF":  diff,
-				"TITLE": diffPath,
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
-		renderedTemplates = append(renderedTemplates, buf.String())
+		renderedTemplates = append(renderedTemplates, templates...)
 		app.Logger.Println("Rendered diff for: ", diffPath)
 	}
 
@@ -407,15 +455,20 @@ func main() {
 		panic(err)
 	}
 
-	toWriteToFile := renderedTemplates
-	if totalCharacters(renderedTemplates) > maxGithubCommentLength {
-		app.Logger.Println("Rendered templates are too long.")
-
-		toWriteToFile = []string{"Rendered templates are too long to fit in one comment. Multiple comments coming soon!"}
-	}
-	// app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
-	err = writeToFile(toWriteToFile, filepath.Join(cwd, writePath))
-	if err != nil {
-		panic(err)
+	templateGroups := consolidateChunks(renderedTemplates)
+	count := 0
+	for _, templateGroup := range templateGroups {
+		toWriteToFile := templateGroup
+		//if totalCharacters(renderedTemplates) > maxGithubCommentLength {
+		//	app.Logger.Println("Rendered templates are too long.")
+		//
+		//	toWriteToFile = []string{"Rendered templates are too long to fit in one comment. Multiple comments coming soon!"}
+		//}
+		// app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
+		err = writeToFile(toWriteToFile, filepath.Join(cwd, writePath+"-"+strconv.Itoa(count)))
+		if err != nil {
+			panic(err)
+		}
+		count++
 	}
 }

@@ -49,5 +49,25 @@ jobs:
     - name: PR comment
       uses: thollander/actions-comment-pull-request@v2
       with:
-        filePath: output.txt
+        filePath: output.txt-0
+        comment_tag: kube-diff # means updating an existing comment, rather than making a new comment on each run
+    - name: PR comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: output.txt-1
+        comment_tag: kube-diff # means updating an existing comment, rather than making a new comment on each run
+    - name: PR comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: output.txt-2
+        comment_tag: kube-diff # means updating an existing comment, rather than making a new comment on each run
+    - name: PR comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: output.txt-3
+        comment_tag: kube-diff # means updating an existing comment, rather than making a new comment on each run
+    - name: PR comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: output.txt-4
         comment_tag: kube-diff # means updating an existing comment, rather than making a new comment on each run
