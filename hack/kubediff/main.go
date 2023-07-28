@@ -23,6 +23,7 @@ const (
 	envsDir   = "manifests/groups"
 	levels    = 2 // how many levels to recurse before we get to apps
 	tmpPath   = "tmp"
+	writePath = "output.txt" // prepends the CWD
 )
 
 //go:embed git-diff-template.txt
@@ -298,9 +299,9 @@ func (A *App) renderDiff(appPath string) (string, error) {
 	return out.String(), nil
 }
 
-func writeToFile(strings []string) error {
+func writeToFile(strings []string, writePath string) error {
 	// open a file for writing
-	file, err := os.Create("myfile.txt")
+	file, err := os.Create(writePath)
 	if err != nil {
 		log.Fatalf("failed creating file: %s", err)
 	}
@@ -390,7 +391,13 @@ func main() {
 		app.Logger.Println("Rendered diff for: ", diffPath)
 	}
 
-	err = writeToFile(renderedTemplates)
+	// gets the current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
+	err = writeToFile(renderedTemplates, filepath.Join(cwd, writePath))
 	if err != nil {
 		panic(err)
 	}
