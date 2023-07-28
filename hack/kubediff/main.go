@@ -23,7 +23,7 @@ const (
 	envsDir   = "manifests/groups"
 	levels    = 2 // how many levels to recurse before we get to apps
 	tmpPath   = "tmp"
-	writePath = "myfile.txt" // prepends the CWD to this value
+	writePath = "output.txt" // prepends the CWD to this value
 )
 
 //go:embed git-diff-template.txt
