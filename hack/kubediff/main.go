@@ -24,6 +24,8 @@ const (
 	levels    = 2 // how many levels to recurse before we get to apps
 	tmpPath   = "tmp"
 	writePath = "output.txt" // prepends the CWD to this value
+
+	maxGithubCommentLength = 65536
 )
 
 //go:embed git-diff-template.txt
@@ -322,6 +324,14 @@ func writeToFile(strings []string, writePath string) error {
 	return nil
 }
 
+func totalCharacters(strings []string) int {
+	total := 0
+	for _, str := range strings {
+		total += len(str)
+	}
+	return total
+}
+
 func main() {
 	app := App{
 		Config: AppConfig{
@@ -396,8 +406,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
-	err = writeToFile(renderedTemplates, filepath.Join(cwd, writePath))
+
+	toWriteToFile := renderedTemplates
+	if totalCharacters(renderedTemplates) > maxGithubCommentLength {
+		app.Logger.Println("Rendered templates are too long.")
+		toWriteToFile = []string{"Rendered templates are too long to fit in one comment. Multiple comments coming soon!"}
+	}
+	//app.Logger.Println("Writing rendered templates to: ", filepath.Join(cwd, writePath))
+	err = writeToFile(toWriteToFile, filepath.Join(cwd, writePath))
 	if err != nil {
 		panic(err)
 	}
