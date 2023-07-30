@@ -39,16 +39,25 @@ jobs:
       with:
         go-version: 1.20.1
 
-    - run: go install github.com/cyclingwithelephants/kubediff@latest
+#    - run: |
+#        go env
+#        export PATH=${PATH}:`go env GOPATH`/bin
+#        go install -v github.com/cyclingwithelephants/kubediff/cmd@latest
 
     - env:
         GLOB_LEVELS: 3
         ENVS_DIR: manifests/groups
         GITHUB_OWNER: ${{ github.repository_owner }}
-        GITHUB_REPO: ${{ github.repository_name }}
+        GITHUB_REPO: ${{ github.event.repository.name }}
         GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ github.token }}
-      run: kubediff
+#        PATH: ${{ env.GOPATH }}
+      run: go run github.com/cyclingwithelephants/kubediff/cmd@latest
+#      run: |
+#        export PATH=${PATH}:`go env GOPATH`/bin
+#        ls /home/runner/work/cloudlab/cloudlab/go
+#        ls /home/runner/work/cloudlab/cloudlab/go/bin
+#        kubediff
 
 
 ## PR comments
