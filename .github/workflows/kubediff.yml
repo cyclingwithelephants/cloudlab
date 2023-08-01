@@ -46,4 +46,4 @@ jobs:
         GITHUB_REPO: ${{ github.event.repository.name }}
         GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ github.token }}
-      run: go run github.com/cyclingwithelephants/kubediff/cmd@latest
+      run: go run github.com/cyclingwithelephants/kubediff/cmd@swap-diff-direction
