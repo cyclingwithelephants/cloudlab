@@ -9,15 +9,18 @@ cd $(dirname $0)/..
 
 # 2. We need to create and initiate a temporary management cluster, this can
 #    be created locally using e.g. kind
+# kind delete cluster
 kind create cluster
 clusterctl init \
   --core cluster-api \
   --bootstrap talos \
   --control-plane talos \
-  --infrastructure hetzner
+  --infrastructure 'hetzner:v1.0.0-beta.20'
 
 # 3. We must export some environment variables to configure the bootstrap process
 source manifests/groups/${env}/cluster/env.bash
+
+kubectl create namespace cluster
 
 # 4. We also need to configure the auth token, so that the cluster can auth
 #    with Hetzner. I stored mine on my local machine. this is a directory I
@@ -36,7 +39,11 @@ kubectl patch secret hcloud \
   -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
 
 # 7. Generate the cluster
-kustomize build manifests/groups/${env}/cluster | envsubst | kubectl apply -f -
+kustomize build manifests/groups/${env}/cluster \
+  | envsubst \
+  | kubectl apply -f -
+
+# sleep 30
 
 # 8. Wait for the cluster to be ready
 kubectl wait taloscontrolplanes.controlplane.cluster.x-k8s.io cloudlab-control-plane \
@@ -84,7 +91,8 @@ clusterctl init \
   --core cluster-api \
   --bootstrap talos \
   --control-plane talos \
-  --infrastructure hetzner
+  --infrastructure 'hetzner:v1.0.0-beta.20'
+  
 unset KUBECONFIG
 clusterctl move \
   --to-kubeconfig ${CAPH_WORKER_CLUSTER_KUBECONFIG}
