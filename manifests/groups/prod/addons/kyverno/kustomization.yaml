@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kyverno
+
+resources:
+  - ../../../../base/addons/kyverno
+
+helmCharts:
+  - name: kyverno
+    includeCRDs: true
+    releaseName: kyverno
+    version: 3.0.5
+    repo: https://kyverno.github.io/kyverno/
+    namespace: kyverno
+
+  - name: kyverno-policies
+    includeCRDs: true
+    releaseName: kyverno-policies
+    version: 3.0.4
