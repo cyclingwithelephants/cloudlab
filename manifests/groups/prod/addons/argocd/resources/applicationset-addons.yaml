@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: addons
+spec:
+  generators:
+    - git:
+        repoURL: &repo https://github.com/cyclingwithelephants/cloudlab.git
+        revision: HEAD
+        directories:
+          - path: manifests/groups/*/addons/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+    spec:
+      project: system
+      source:
+        repoURL: *repo
+        path: '{{path}}'
+      destination:
+        server: in-cluster
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          # this option is needed for prometheus-operator because it has HUGE CRDs
+          # TODO: find a way to apply this option only to prometheus-operator using this ApplicationSet
+          - ServerSideApply=true
