@@ -56,7 +56,7 @@ source "hcloud" "arm64" {
   image       = local.os
   location    = local.location
   rescue      = local.rescue
-  server_type = "cax21" # 4 core 8 GB ram
+  server_type = "cax11" # 4 core 8 GB ram
 
   snapshot_labels = {
     caph-image-name = local.image_name
