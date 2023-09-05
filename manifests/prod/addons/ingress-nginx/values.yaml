@@ -1,0 +1,8 @@
+controller:
+  extraArgs:
+    # this allows SSL termination at the service requiring an ingress.
+    # this is used for vcluster kube-api servers.
+    enable-ssl-passthrough: ""
+  service:
+    annotations:
+      load-balancer.hetzner.cloud/location: fsn1 # specify a cloud region for hetzner cloud

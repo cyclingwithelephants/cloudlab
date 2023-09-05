@@ -15,10 +15,10 @@ clusterctl init \
   --core cluster-api \
   --bootstrap talos \
   --control-plane talos \
-  --infrastructure 'hetzner:v1.0.0-beta.20'
+  --infrastructure 'hetzner'
 
-# 3. We must export some environment variables to configure the bootstrap process
-source manifests/groups/${env}/cluster/env.bash
+# # 3. We must export some environment variables to configure the bootstrap process
+# source manifests/groups/${env}/cluster/env.bash
 
 kubectl create namespace cluster
 
@@ -39,36 +39,38 @@ kubectl patch secret hcloud \
   -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
 
 # 7. Generate the cluster
-kustomize build manifests/groups/${env}/cluster \
-  | envsubst \
+kustomize build manifests/${env}/cluster \
+  --enable-helm \
   | kubectl apply -f -
 
-# sleep 30
+sleep 10
 
 # 8. Wait for the cluster to be ready
-kubectl wait taloscontrolplanes.controlplane.cluster.x-k8s.io cloudlab-control-plane \
+kubectl wait taloscontrolplane cloudlab-control-plane \
+  -n cluster \
   --for=condition=Available
+
 
 # 9. Once the first master node is up, we can fetch the kube-config
 export CAPH_WORKER_CLUSTER_KUBECONFIG=/tmp/workload-kubeconfig
 unset KUBECONFIG
-clusterctl get kubeconfig ${CLUSTER_NAME} > ${CAPH_WORKER_CLUSTER_KUBECONFIG}
+clusterctl get kubeconfig cloudlab -n cluster > ${CAPH_WORKER_CLUSTER_KUBECONFIG}
 export KUBECONFIG=/tmp/workload-kubeconfig
 
 # 10. Deploy the Hetzner cloud controller manager
-kustomize build --enable-helm manifests/groups/prod/addons/hcloud-ccm \
-  | kubectl apply -f -
+# kustomize build --enable-helm manifests/prod/addons/hcloud-ccm \
+#   | kubectl apply -f -
 
 # allows the hccm to auth with hetzner
 # We also specify the network to attach the cluster to.
 # It happens to be the same as the cluster name.
-kubectl create secret generic hcloud \
- -n kube-system \
- --from-literal=token=${HCLOUD_TOKEN} \
- --from-literal=network=${CLUSTER_NAME}
+# kubectl create secret generic hcloud \
+#  -n kube-system \
+#  --from-literal=token=${HCLOUD_TOKEN} \
+#  --from-literal=network=cloudlab
 
 # 11. Deploy ArgoCD, so that the cluster will begin deploying its own workloads
-kustomize build manifests/groups/prod/addons/argocd | kubectl apply -f -
+# kustomize build manifests/groups/prod/addons/argocd | kubectl apply -f -
 
 # 12. Deploy the secret allowing external-secrets to populate secrets
 #     from AWS parameter store. It looks like:
@@ -82,17 +84,17 @@ kustomize build manifests/groups/prod/addons/argocd | kubectl apply -f -
 #  name: aws-parameter-store
 #  namespace: external-secrets
 # ---
-kubectl apply -f manifests/groups/prod/secrets/external-secrets.yaml
+# kubectl apply -f manifests/groups/prod/secrets/external-secrets.yaml
 
 # 12. Move the cluster installation from the managing cluster to the
 #     managed cluster, so that the cluster manages itselfinstall the cluster
 #     controllers onto the host cluster
-clusterctl init \
-  --core cluster-api \
-  --bootstrap talos \
-  --control-plane talos \
-  --infrastructure 'hetzner:v1.0.0-beta.20'
-  
-unset KUBECONFIG
-clusterctl move \
-  --to-kubeconfig ${CAPH_WORKER_CLUSTER_KUBECONFIG}
+# clusterctl init \
+#   --core cluster-api \
+#   --bootstrap talos \
+#   --control-plane talos \
+#   --infrastructure 'hetzner'
+
+# unset KUBECONFIG
+# clusterctl move \
+#   --to-kubeconfig ${CAPH_WORKER_CLUSTER_KUBECONFIG}

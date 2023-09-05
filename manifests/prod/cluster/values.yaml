@@ -1,0 +1,76 @@
+cluster:
+  name: cloudlab
+  hcloudRegion: fsn1
+  # the name of the ssh key stored in hcloud project
+  sshKey: cluster-nodes
+
+controlPlane:
+  replicas: 3
+  # hostName: "10.0.0.2"
+  versions:
+    talos: &talosVersion v1.4.5 # Don't set this to anything other than what's specified in the machine image.
+    kubernetes: &k8sVersion v1.27.2
+  hcloud:
+    imageName: &imageName talos-2beaf7a3
+    # For machine types available visit https://www.hetzner.com/cloud
+    # CAX11 is ARM, 2 CPU, 4GB RAM, 40GB Disk
+    # limitation of caph means machineType must be specifed in lower case.
+    machineType: cax11
+  # It looks like configuration must be in the form of json 6902 patches, rather than specifying an inline yaml document
+  talosConfigPatches:
+  - op: add
+    path: /cluster/externalCloudProvider
+    value:
+      enabled: true
+  - op: add
+    path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces
+    value:
+    - kube-system
+    - logging
+  - op: add
+    path: /cluster/apiServer/certSANs/-
+    value: "cloudlab.prod.adamland.xyz"
+# Config for removing CNI so that Cilium can be installed
+# https://www.talos.dev/v1.5/kubernetes-guides/network/deploying-cilium/
+  - op: add
+    path: /cluster/network/cni
+    value:
+      name: none
+  - op: replace
+    path: /cluster/proxy/disabled
+    value: true
+# kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+# https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
+#   - op: add
+#     path: /machine/features
+#     value:
+#       kubePrism:
+#         enabled: true
+#         port: 7445
+
+workerPools:
+- name: default-node-pool
+  autoscaling:
+    enabled: true
+    minNodes: 3
+    maxNodes: 5
+  replicas: 3
+  versions:
+    talos: *talosVersion
+    kubernetes: *k8sVersion
+  hcloud:
+    imageName: *imageName
+    machineType: cax11
+  talosConfigPatches:
+  - op: add
+    path: /cluster/externalCloudProvider
+    value:
+      enabled: true
+# kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+# https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
+#   - op: add
+#     path: /machine/features
+#     value:
+#       kubePrism:
+#         enabled: true
+#         port: 7445

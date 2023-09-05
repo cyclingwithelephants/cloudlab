@@ -1,0 +1,10 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HCloudMachineTemplate
+metadata:
+  name: cloudlab-default-node-pool
+spec:
+  template:
+    spec:
+      publicNetwork:
+        enableIPv4: true
+        enableIPv6: true

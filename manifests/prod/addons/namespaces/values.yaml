@@ -1,0 +1,23 @@
+# chart defaults to:
+# defaults: # provides defaults that will be overwritten if specified elsewhere
+#   requests:
+#     cpu: 2
+#     memory: 4Gi
+#   limits:
+#     cpu: 4
+#     memory: 4Gi
+
+common: # will be applied to all resources, with per namespace additions possible (rather than overrides)
+  labels:
+    example: label
+
+namespaces:
+- name: argocd
+- name: crossplane-system
+- name: external-dns
+- name: external-secrets
+- name: ingress-nginx
+- name: kyverno
+- name: loft
+- name: logging
+- name: monitoring
