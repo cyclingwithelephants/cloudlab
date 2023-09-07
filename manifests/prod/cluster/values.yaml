@@ -8,10 +8,10 @@ controlPlane:
   replicas: 3
   # hostName: "10.0.0.2"
   versions:
-    talos: &talosVersion v1.4.5 # Don't set this to anything other than what's specified in the machine image.
+    talos: &talosVersion v1.5.1 # Don't set this to anything other than what's specified in the machine image.
     kubernetes: &k8sVersion v1.27.2
   hcloud:
-    imageName: &imageName talos-2beaf7a3
+    imageName: &imageName talos-7fbaa897
     # For machine types available visit https://www.hetzner.com/cloud
     # CAX11 is ARM, 2 CPU, 4GB RAM, 40GB Disk
     # limitation of caph means machineType must be specifed in lower case.
@@ -41,12 +41,12 @@ controlPlane:
     value: true
 # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
 # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
-#   - op: add
-#     path: /machine/features
-#     value:
-#       kubePrism:
-#         enabled: true
-#         port: 7445
+  - op: add
+    path: /machine/features
+    value:
+      kubePrism:
+        enabled: true
+        port: 7445
 
 workerPools:
 - name: default-node-pool
@@ -66,11 +66,11 @@ workerPools:
     path: /cluster/externalCloudProvider
     value:
       enabled: true
-# kube-prism is a cool tool. This config should be applied to control plane and worker nodes
-# https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
-#   - op: add
-#     path: /machine/features
-#     value:
-#       kubePrism:
-#         enabled: true
-#         port: 7445
+  # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+  # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
+  - op: add
+    path: /machine/features
+    value:
+      kubePrism:
+        enabled: true
+        port: 7445

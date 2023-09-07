@@ -48,7 +48,8 @@ sleep 10
 # 8. Wait for the cluster to be ready
 kubectl wait taloscontrolplane cloudlab-control-plane \
   -n cluster \
-  --for=condition=Available
+  --for=condition=Available \
+  --timeout=5m
 
 
 # 9. Once the first master node is up, we can fetch the kube-config
@@ -56,6 +57,8 @@ export CAPH_WORKER_CLUSTER_KUBECONFIG=/tmp/workload-kubeconfig
 unset KUBECONFIG
 clusterctl get kubeconfig cloudlab -n cluster > ${CAPH_WORKER_CLUSTER_KUBECONFIG}
 export KUBECONFIG=/tmp/workload-kubeconfig
+
+kustomize build --enable-helm manifests/prod/addons/cilium | kubectl apply -f -
 
 # 10. Deploy the Hetzner cloud controller manager
 # kustomize build --enable-helm manifests/prod/addons/hcloud-ccm \
