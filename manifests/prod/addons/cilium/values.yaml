@@ -3,7 +3,7 @@ ipam:
   operator:
     clusterPoolIPv4PodCIDRList:
     - 10.244.0.0/16 # same as flannel for convenience
-kubernetesProxyReplacement: strict
+kubeProxyReplacement: strict
 securityContext:
   capabilities:
     ciliumAgent:
@@ -24,34 +24,46 @@ securityContext:
     - SYS_RESOURCE
 
 
+#bpf:
+#  autoMount:
+#    enabled: false
 
-cgroup:
-  automount:
-    enabled: false
-  hostRoot: /sys/fs/cgroup
+#cgroup:
+#  automount:
+#    enabled: false
+#  hostRoot: /sys/fs/cgroup
 
 k8sServiceHost: localhost
 k8sServicePort: 7445
 
-# rollOutCiliumPods: true
-# priorityClassName: "system-node-critical"
+#k8sServiceHost: 10.0.0.2
+#k8sServicePort: 443
 
-# hubble:
-#   metrics:
-#     enabled:
-#       - dns:query;ignoreAAAA
-#       - drop
-#       - tcp
-#       - flow
-#       - icmp
-#       - http
-#   relay:
-#     enabled: true
-#     rollOutPods: true
-#   ui:
-#     enabled: true
-#     rollOutPods: true
+rollOutCiliumPods: true
+priorityClassName: "system-node-critical"
 
-# operator:
-#   rollOutPods: true
-#   priorityClassName: "system-node-critical"
+hubble:
+  metrics:
+    enabled:
+     - dns:query;ignoreAAAA
+     - drop
+     - tcp
+     - flow
+     - icmp
+     - http
+  relay:
+    enabled: true
+    rollOutPods: true
+  ui:
+    enabled: true
+    rollOutPods: true
+
+operator:
+  rollOutPods: true
+  priorityClassName: "system-node-critical"
+
+
+# some completely incomplete node-node encryption config
+#encryption:
+#  nodeEncryption: true
+#  type: wireguard

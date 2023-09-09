@@ -16,22 +16,35 @@ controlPlane:
     # CAX11 is ARM, 2 CPU, 4GB RAM, 40GB Disk
     # limitation of caph means machineType must be specifed in lower case.
     machineType: cax11
+
   # It looks like configuration must be in the form of json 6902 patches, rather than specifying an inline yaml document
   talosConfigPatches:
   - op: add
     path: /cluster/externalCloudProvider
     value:
       enabled: true
+
+  # Allows running pods which need some kind of privileged access
   - op: add
     path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces
     value:
     - kube-system
     - logging
+    - caph-system
+    - cacppt-system
+    - cabpt-system
+
+  # Add some additional cert SANs
   - op: add
     path: /cluster/apiServer/certSANs/-
     value: "cloudlab.prod.adamland.xyz"
-# Config for removing CNI so that Cilium can be installed
-# https://www.talos.dev/v1.5/kubernetes-guides/network/deploying-cilium/
+    # loadbalancer private IP
+  - op: add
+    path: /cluster/apiServer/certSANs/-
+    value: "10.0.0.2"
+
+  # Config for removing CNI so that Cilium can be installed
+  # https://www.talos.dev/v1.5/kubernetes-guides/network/deploying-cilium/
   - op: add
     path: /cluster/network/cni
     value:
@@ -39,14 +52,22 @@ controlPlane:
   - op: replace
     path: /cluster/proxy/disabled
     value: true
-# kube-prism is a cool tool. This config should be applied to control plane and worker nodes
-# https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
+
+  # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+  # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
   - op: add
     path: /machine/features
     value:
       kubePrism:
         enabled: true
         port: 7445
+
+  # Required for using metrics API securely
+  # https://www.talos.dev/v1.5/kubernetes-guides/configuration/deploy-metrics-server/#:~:text=By%20default%2C%20the%20certificates%20in,be%20recognized%20by%20metrics%2Dserver.
+  - op: add
+    path: /machine/kubelet/extraArgs
+    value:
+      rotate-server-certificates: true
 
 workerPools:
 - name: default-node-pool
@@ -66,6 +87,7 @@ workerPools:
     path: /cluster/externalCloudProvider
     value:
       enabled: true
+
   # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
   # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
   - op: add
@@ -74,3 +96,10 @@ workerPools:
       kubePrism:
         enabled: true
         port: 7445
+
+  # Required for using metrics API securely
+  # https://www.talos.dev/v1.5/kubernetes-guides/configuration/deploy-metrics-server/#:~:text=By%20default%2C%20the%20certificates%20in,be%20recognized%20by%20metrics%2Dserver.
+  - op: add
+    path: /machine/kubelet/extraArgs
+    value:
+      rotate-server-certificates: true

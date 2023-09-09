@@ -6,6 +6,6 @@ helmCharts:
   - name: hcloud-cloud-controller-manager
     valuesFile: values.yaml
     releaseName: hetzner-ccm
-    version: 1.16.0
+    version: 1.17.2
     repo: https://charts.hetzner.cloud
     namespace: kube-system

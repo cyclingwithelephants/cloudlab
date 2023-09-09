@@ -1,11 +1,10 @@
-# chart defaults to:
-# defaults: # provides defaults that will be overwritten if specified elsewhere
-#   requests:
-#     cpu: 2
-#     memory: 4Gi
-#   limits:
-#     cpu: 4
-#     memory: 4Gi
+defaults: # provides defaults that will be overwritten if specified elsewhere
+  requests:
+    cpu: 4
+    memory: 4Gi
+  limits:
+    cpu: 4
+    memory: 4Gi
 
 common: # will be applied to all resources, with per namespace additions possible (rather than overrides)
   labels:
@@ -13,6 +12,7 @@ common: # will be applied to all resources, with per namespace additions possibl
 
 namespaces:
 - name: argocd
+- name: cert-manager
 - name: crossplane-system
 - name: external-dns
 - name: external-secrets

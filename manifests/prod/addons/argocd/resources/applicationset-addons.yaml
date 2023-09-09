@@ -3,36 +3,40 @@ kind: ApplicationSet
 metadata:
   name: addons
 spec:
-  strategy:
-    type: RollingSync
-    rollingSync:
-      steps:
-        - matchExpressions:
-            - key: cloudlab/argocd-appset-progressive-sync-wave
-              operator: In
-              values:
-                - "-2"
-        - matchExpressions:
-            - key: cloudlab/argocd-appset-progressive-sync-wave
-              operator: In
-              values:
-                - "-1"
-        - matchExpressions:
-            - key: cloudlab/argocd-appset-progressive-sync-wave
-              operator: In
-              values:
-                - "0"
-        - matchExpressions:
-            - key: cloudlab/argocd-appset-progressive-sync-wave
-              operator: In
-              values:
-                - "1"
+#  strategy:
+#    type: RollingSync
+#    rollingSync:
+#      steps:
+#        - matchExpressions:
+#            - key: cloudlab/argocd-appset-progressive-sync-wave
+#              operator: In
+#              values:
+#                - "-2"
+#        - matchExpressions:
+#            - key: cloudlab/argocd-appset-progressive-sync-wave
+#              operator: In
+#              values:
+#                - "-1"
+#        - matchExpressions:
+#            - key: cloudlab/argocd-appset-progressive-sync-wave
+#              operator: In
+#              values:
+#                - "0"
+#        - matchExpressions:
+#            - key: cloudlab/argocd-appset-progressive-sync-wave
+#              operator: In
+#              values:
+#                - "1"
   generators:
-    - git:
-        repoURL: &repo https://github.com/cyclingwithelephants/cloudlab.git
-        revision: HEAD
-        directories:
-          - path: manifests/prod/addons/*
+  - matrix:
+      generators:
+        # enriches applications per directory in clusters/base with cluster labels
+        - clusters: {}
+        - git:
+            repoURL: &repo https://github.com/cyclingwithelephants/cloudlab.git
+            revision: HEAD
+            directories:
+              - path: manifests/prod/addons/*
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   template:
@@ -44,7 +48,7 @@ spec:
         repoURL: *repo
         path: '{{.path}}'
       destination:
-        server: in-cluster
+        server: '{{.server}}'
         namespace: argocd
       syncPolicy:
         automated:

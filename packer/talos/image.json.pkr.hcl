@@ -21,7 +21,7 @@ variable "hcloud_token" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.5.1"
+  default = "v1.4.8" # 1.5 upgrades to k8s 1.28 which is not compatible with cilium 1.14
 }
 
 locals {
