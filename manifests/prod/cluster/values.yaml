@@ -29,12 +29,14 @@ controlPlane:
   - op: add
     path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces
     value:
-    - kube-system
-    - logging
+    - cabpt-system
     - caph-system
     - cacppt-system
-    - cabpt-system
     - cilium-test
+    - kube-system
+    - logging
+    - monitoring
+
 
   # Add some additional cert SANs
   - op: add
