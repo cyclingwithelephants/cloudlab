@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: external-secrets
 
 resources:
-  - ../../../../base/addons/external-secrets
   - ./cluster-secret-store.yaml
 
 helmCharts:
