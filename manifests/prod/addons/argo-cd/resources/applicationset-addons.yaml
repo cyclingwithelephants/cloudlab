@@ -34,7 +34,7 @@ spec:
         - clusters: {}
         - git:
             repoURL: &repo https://github.com/cyclingwithelephants/cloudlab.git
-            revision: HEAD
+            revision: main
             directories:
               - path: manifests/prod/addons/*
   goTemplate: true
@@ -43,13 +43,12 @@ spec:
     metadata:
       name: '{{.path.basename}}'
     spec:
-      project: system
+      project: addons
       source:
         repoURL: *repo
-        path: '{{.path}}'
+        path: '{{.path.path}}'
       destination:
         server: '{{.server}}'
-        namespace: argocd
       syncPolicy:
         automated:
           prune: true

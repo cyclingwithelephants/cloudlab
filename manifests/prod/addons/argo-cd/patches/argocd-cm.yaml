@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: argocd-cm
+  namespace: argocd
 data:
   # this allows us to use helmCharts in kustomization.yaml files
   # it's a convenient way to reference remote helm charts

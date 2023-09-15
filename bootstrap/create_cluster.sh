@@ -76,9 +76,9 @@ initialise_workload_cluster() {
   # 11. Deploy ArgoCD, so that the cluster will begin deploying its own workloads
   apply_manifests_at manifests/prod/addons/namespaces
   sleep 5
-  apply_manifests_at manifests/prod/addons/argocd
+  apply_manifests_at manifests/prod/addons/argo-cd
   sleep 1
-  apply_manifests_at manifests/prod/addons/argocd
+  apply_manifests_at manifests/prod/addons/argo-cd
 
   # 12. Deploy the secret allowing external-secrets to populate secrets
   #     from AWS parameter store. It looks like:

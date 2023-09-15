@@ -1,0 +1,24 @@
+redis-ha:
+  enabled: true
+
+controller:
+  replicas: 1
+
+server:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+
+repoServer:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+
+applicationSet:
+  replicas: 2
+
+configs:
+  params:
+    # this is an alpha feature
+    # https://argo-cd.readthedocs.io/en/latest/operator-manual/applicationset/Progressive-Syncs/
+    applicationsetcontroller.enable.progressive.syncs: true
