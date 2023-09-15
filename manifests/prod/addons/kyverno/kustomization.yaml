@@ -11,6 +11,7 @@ helmCharts:
     namespace: kyverno
 
   - name: kyverno-policies
-    includeCRDs: true
     releaseName: kyverno-policies
+    repo: https://kyverno.github.io/kyverno/
     version: 3.0.4
+    namespace: kyverno

@@ -45,6 +45,12 @@ controlPlane:
     path: /cluster/apiServer/certSANs/-
     value: "10.0.0.2"
 
+  # Enable the ResourceQuote resource
+  - op: add
+    path: /cluster/apiServer/extraArgs
+    value:
+      enable-admission-plugins: ResourceQuota
+
   # Config for removing CNI so that Cilium can be installed
   # https://www.talos.dev/v1.5/kubernetes-guides/network/deploying-cilium/
 #  - op: add
