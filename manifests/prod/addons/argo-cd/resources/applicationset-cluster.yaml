@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster
+spec:
+  generators:
+  - matrix:
+      generators:
+        # enriches applications per directory in clusters/base with cluster labels
+        - clusters: {}
+        - git:
+            repoURL: &repo https://github.com/cyclingwithelephants/cloudlab.git
+            revision: main
+            directories:
+              - path: manifests/prod/cluster
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  template:
+    metadata:
+      name: '{{.path.basename}}'
+    spec:
+      project: default # TODO: make a new appProject
+      source:
+        repoURL: *repo
+        path: '{{.path.path}}'
+      destination:
+        server: '{{.server}}'
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          # this option is needed for prometheus-operator because it has HUGE CRDs
+          # TODO: find a way to apply this option only to prometheus-operator using this ApplicationSet
+          - ServerSideApply=true
