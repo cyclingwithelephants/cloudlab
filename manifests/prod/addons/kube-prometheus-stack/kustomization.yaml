@@ -3,8 +3,8 @@ kind: Kustomization
 #namespace: # we don't specify namespace as otherwise this causes conflicts
 namespace: monitoring
 
-commonLabels:
-  cloudlab/appset-progressive-sync-wave: "-1"
+#commonLabels:
+#  cloudlab/appset-progressive-sync-wave: "-1"
 
 
 helmCharts:
