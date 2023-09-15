@@ -8,9 +8,13 @@ spec:
       containers:
         - name: external-dns
           args:
-          - --source=service # ingress is also available
+          - --source=ingress
           - --registry=txt
           - --provider=cloudflare
-          - --cloudflare-dns-records-per-page=5000 # see throttling: https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/cloudflare.md
+          # see throttling: https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/cloudflare.md
+          - --cloudflare-dns-records-per-page=5000
+          # excludes the private IP range in the LB service from featuring in DNS records
+          - --exclude-target-net=10.0.0.0/8
+
 #            - --domain-filter=example.com # (optional) limit to only example.com domains; change to match the zone created above.
 #            - --zone-id-filter=023e105f4ecef8ad9ca31a8372d0c353 # (optional) limit to a specific zone.

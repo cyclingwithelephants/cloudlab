@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: external-dns
 
 resources:
-  - ../../../../base/addons/external-dns
   - https://github.com/kubernetes-sigs/external-dns//kustomize?master
   - external-secret-cloudflare-api-token.yaml
 

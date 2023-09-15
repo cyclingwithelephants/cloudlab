@@ -24,15 +24,7 @@ write_capi_secret() {
   #    have created, hetzner don't officially use this directory
 
   # 5. Create the k8s secret, allowing the management cluster to auth with Hetzner.
-  kubectl create secret generic hcloud \
-    -n cluster \
-    --from-literal=token="${HCLOUD_TOKEN_CAPH}"
-
-  # 6. We also patch the created secret so it is automatically moved to the target
-  #    cluster later. This will enable the cluster to manage itself.
-  kubectl patch secret hcloud \
-    -n cluster \
-    -p '{"metadata":{"labels":{"clusterctl.cluster.x-k8s.io/move":""}}}'
+  kubectl apply -f manifests/prod/secrets/hcloud-cloud-controller-manager.yaml
 }
 
 apply_manifests_at() {
@@ -42,7 +34,7 @@ apply_manifests_at() {
 generate_cluster() {
   # 7. Generate the cluster
   apply_manifests_at "manifests/${env}/cluster"
-  sleep 10
+  kubectl apply -f "manifests/prod/secrets/hcloud-capi.yaml"
 
   # 8. Wait for the cluster to be ready
   kubectl wait taloscontrolplane cloudlab-control-plane \
@@ -51,26 +43,16 @@ generate_cluster() {
     --timeout=5m
 }
 
-# 9. Once the first master node is up, we can fetch the kube-config
-get_workload_kubeconfig() {
-  export CAPH_WORKER_CLUSTER_KUBECONFIG=/tmp/workload-kubeconfig
-  unset KUBECONFIG
-  clusterctl get kubeconfig cloudlab -n cluster > ${CAPH_WORKER_CLUSTER_KUBECONFIG}
-  export KUBECONFIG=/tmp/workload-kubeconfig
-}
-
 initialise_workload_cluster() {
 
-#  apply_manifests_at manifests/prod/addons/cilium
+    unset KUBECONFIG
+    clusterctl get kubeconfig cloudlab -n cluster > /tmp/workload-kubeconfig
+    export KUBECONFIG=/tmp/workload-kubeconfig
 
   # 10. Deploy the Hetzner cloud controller manager
   # allows the hccm to auth with hetzner
   # We also specify the network to attach the cluster to.
   # It happens to be the same as the cluster name.
-  kubectl create secret generic hcloud \
-    -n kube-system \
-    --from-literal=token="${HCLOUD_TOKEN_CCM}" \
-    --from-literal=network=cloudlab
   apply_manifests_at manifests/prod/addons/hcloud-ccm
 
   # 11. Deploy ArgoCD, so that the cluster will begin deploying its own workloads
@@ -80,19 +62,11 @@ initialise_workload_cluster() {
   sleep 1
   apply_manifests_at manifests/prod/addons/argo-cd
 
-  # 12. Deploy the secret allowing external-secrets to populate secrets
-  #     from AWS parameter store. It looks like:
-  # ---
-  #apiVersion: v1
-  #data:
-  #  aws_access_key_id: <redacted>
-  #  aws_secret_access_key: <redacted>
-  #kind: Secret
-  #metadata:
-  #  name: aws-parameter-store
-  #  namespace: external-secrets
-  # ---
-  kubectl apply -f manifests/prod/secrets/external-secrets.yaml
+  # create some bootstrap secrets including:
+  # - external-secrets secret
+  # - hcloud-capi,for allowing CAPI to auth
+  # - hcloud-ccm, for allowing Cloud Controller Manager to auth (move to external-secrets)
+  kubectl apply -f manifests/prod/secrets/
 
   # 13. Move the cluster installation from the managing cluster to the
   #     managed cluster, so that the cluster manages itself
@@ -105,10 +79,10 @@ initialise_workload_cluster() {
 # 1. start at root of repo
 cd $(dirname $0)/..
 
-#clusterctl_init
+kind create cluster
+clusterctl_init
 write_capi_secret
 generate_cluster
-get_workload_kubeconfig
 initialise_workload_cluster
 
 

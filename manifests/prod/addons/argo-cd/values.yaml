@@ -1,8 +1,18 @@
 
 # There's some kind of labelSelector issue preventing ArgoCD from reading from redis-ha
 # TODO: enable redis-ha
-#redis-ha:
-#  enabled: true
+redis-ha:
+  enabled: true
+
+  #  Without these labels, we get a strange error causing us to not be able to look at resources in the UI
+  # Unable to load data: error getting cached app managed resources: cannot find pod with selector:
+  # [app.kubernetes.io/name=argocd-redis-ha-haproxy app.kubernetes.io/name=argocd-redis]
+  labels:
+    app.kubernetes.io/name: argocd-redis
+  haproxy:
+    labels:
+      app.kubernetes.io/name: argocd-redis-ha-haproxy
+
 
 
 controller:

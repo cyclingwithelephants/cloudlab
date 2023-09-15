@@ -12,6 +12,3 @@
 #      accessKeyId: <AWS access key ID>
 #      s3ForcePathStyle: false
 #      insecure: false
-
-minio:
-  enabled: true

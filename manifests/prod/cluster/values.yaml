@@ -81,40 +81,40 @@ controlPlane:
       rotate-server-certificates: true
 
 workerPools:
-- name: default-node-pool
+- name: cax21-node-pool
   publicNetwork:
     enableIPv4: true
     enableIPv6: false
-  autoscaling:
-    enabled: false
-    minNodes: 3
-    maxNodes: 5
-  replicas: 5
+  #  autoscaling:
+  #    enabled: false
+  #    minNodes: 3
+  #    maxNodes: 5
+  replicas: 3
   versions:
     talos: *talosVersion
     kubernetes: *k8sVersion
   hcloud:
     imageName: *imageName
-    machineType: cax11
+    machineType: cax21
   talosConfigPatches:
-  - op: add
-    path: /cluster/externalCloudProvider
-    value:
-      enabled: true
+    - op: add
+      path: /cluster/externalCloudProvider
+      value:
+        enabled: true
 
-  # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
-  # when you're using cilium. Calico _might_ be able to use this as well.
-  # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
-#  - op: add
-#    path: /machine/features
-#    value:
-#      kubePrism:
-#        enabled: true
-#        port: 7445
+    # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+    # when you're using cilium. Calico _might_ be able to use this as well.
+    # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
+    #  - op: add
+    #    path: /machine/features
+    #    value:
+    #      kubePrism:
+    #        enabled: true
+    #        port: 7445
 
-  # Required for using metrics API securely
-  # https://www.talos.dev/v1.5/kubernetes-guides/configuration/deploy-metrics-server/#:~:text=By%20default%2C%20the%20certificates%20in,be%20recognized%20by%20metrics%2Dserver.
-  - op: add
-    path: /machine/kubelet/extraArgs
-    value:
-      rotate-server-certificates: true
+    # Required for using metrics API securely
+    # https://www.talos.dev/v1.5/kubernetes-guides/configuration/deploy-metrics-server/#:~:text=By%20default%2C%20the%20certificates%20in,be%20recognized%20by%20metrics%2Dserver.
+    - op: add
+      path: /machine/kubelet/extraArgs
+      value:
+        rotate-server-certificates: true

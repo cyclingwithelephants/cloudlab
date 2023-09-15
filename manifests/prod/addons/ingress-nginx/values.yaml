@@ -6,3 +6,10 @@ controller:
   service:
     annotations:
       load-balancer.hetzner.cloud/location: fsn1 # specify a cloud region for hetzner cloud
+
+  autoscaling:
+#    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+
+  maxUnavailable: 1
