@@ -1,0 +1,19 @@
+apiVersion: kyverno.io/v2alpha1
+kind: PolicyException
+metadata:
+  name: host-path-exception
+spec:
+  exceptions:
+    - policyName: disallow-host-path
+      ruleNames:
+        - autogen-host-path
+  match:
+    any:
+      - resources:
+          kinds:
+            - Pod
+            - Daemonset
+          namespaces:
+            - monitoring
+          names:
+            - kube-prometheus-stack-prometheus-node-exporter*
