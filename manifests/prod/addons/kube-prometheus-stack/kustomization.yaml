@@ -3,9 +3,6 @@ kind: Kustomization
 #namespace: # we don't specify namespace as otherwise this causes conflicts
 namespace: monitoring
 
-resources:
-  - kyverno-exceptions
-
 helmCharts:
   - name: kube-prometheus-stack
     includeCRDs: true
