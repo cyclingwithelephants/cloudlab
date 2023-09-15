@@ -1,8 +1,12 @@
-redis-ha:
-  enabled: true
+
+# There's some kind of labelSelector issue preventing ArgoCD from reading from redis-ha
+# TODO: enable redis-ha
+#redis-ha:
+#  enabled: true
+
 
 controller:
-  replicas: 1
+  replicas: 2
 
 server:
   autoscaling:
