@@ -6,12 +6,7 @@ helmCharts:
   - name: capi-hcloud-talos
     includeCRDs: false
     releaseName: cloudlab-cluster
-    version: 0.5.0
+    version: 0.7.0
     valuesFile: values.yaml
     repo: https://cyclingwithelephants.github.io/charts
     namespace: cluster
-
-patches:
-- path: enable-ipv4-worker-pool.yaml
-- path: enable-ipv4-control-plane.yaml
-- path: secret-is-automatically-namespaced.yaml

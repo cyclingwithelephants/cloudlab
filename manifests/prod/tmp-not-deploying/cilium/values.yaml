@@ -1,9 +1,10 @@
 ipam:
   mode: kubernetes
   operator:
+    # IPv4 CIDR list range to delegate to individual nodes for IPAM.
     clusterPoolIPv4PodCIDRList:
     - 10.244.0.0/16 # same as flannel for convenience
-kubeProxyReplacement: strict
+kubeProxyReplacement: true
 securityContext:
   capabilities:
     ciliumAgent:
@@ -23,44 +24,45 @@ securityContext:
     - SYS_ADMIN
     - SYS_RESOURCE
 
+#debug:
+#  enabled: true
+
+#ipv4NativeRoutingCIDR: "10.0.0.0/16"
 
 #bpf:
 #  autoMount:
 #    enabled: false
 
-#cgroup:
-#  automount:
-#    enabled: false
-#  hostRoot: /sys/fs/cgroup
+cgroup:
+  automount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
 
 k8sServiceHost: localhost
 k8sServicePort: 7445
 
-#k8sServiceHost: 10.0.0.2
-#k8sServicePort: 443
-
-rollOutCiliumPods: true
-priorityClassName: "system-node-critical"
-
-hubble:
-  metrics:
-    enabled:
-     - dns:query;ignoreAAAA
-     - drop
-     - tcp
-     - flow
-     - icmp
-     - http
-  relay:
-    enabled: true
-    rollOutPods: true
-  ui:
-    enabled: true
-    rollOutPods: true
-
-operator:
-  rollOutPods: true
-  priorityClassName: "system-node-critical"
+#rollOutCiliumPods: true
+#priorityClassName: "system-node-critical"
+#
+#hubble:
+#  metrics:
+#    enabled:
+#     - dns:query;ignoreAAAA
+#     - drop
+#     - tcp
+#     - flow
+#     - icmp
+#     - http
+#  relay:
+#    enabled: true
+#    rollOutPods: true
+#  ui:
+#    enabled: true
+#    rollOutPods: true
+#
+#operator:
+#  rollOutPods: true
+#  priorityClassName: "system-node-critical"
 
 
 # some completely incomplete node-node encryption config

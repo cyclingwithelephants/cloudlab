@@ -5,13 +5,14 @@ cluster:
   sshKey: cluster-nodes
 
 controlPlane:
-  replicas: 3
-  # hostName: "10.0.0.2"
   versions:
-    talos: &talosVersion v1.5.1 # Don't set this to anything other than what's specified in the machine image.
-    kubernetes: &k8sVersion v1.27.2
+    talos: &talosVersion v1.4.8 # Don't set this to anything other than what's specified in the machine image.
+    kubernetes: &k8sVersion v1.27.4
+  endpoint:
+    hostName: ""
+    port: 443
   hcloud:
-    imageName: &imageName talos-7fbaa897
+    imageName: &imageName talos-edfa9b6e
     # For machine types available visit https://www.hetzner.com/cloud
     # CAX11 is ARM, 2 CPU, 4GB RAM, 40GB Disk
     # limitation of caph means machineType must be specifed in lower case.
@@ -33,34 +34,36 @@ controlPlane:
     - caph-system
     - cacppt-system
     - cabpt-system
+    - cilium-test
 
   # Add some additional cert SANs
   - op: add
     path: /cluster/apiServer/certSANs/-
     value: "cloudlab.prod.adamland.xyz"
-    # loadbalancer private IP
+    # loadbalancer private IP - it seems CAPH always starts the load balancer first, so it always has IP 10.0.0.2
   - op: add
     path: /cluster/apiServer/certSANs/-
     value: "10.0.0.2"
 
   # Config for removing CNI so that Cilium can be installed
   # https://www.talos.dev/v1.5/kubernetes-guides/network/deploying-cilium/
-  - op: add
-    path: /cluster/network/cni
-    value:
-      name: none
-  - op: replace
-    path: /cluster/proxy/disabled
-    value: true
+#  - op: add
+#    path: /cluster/network/cni
+#    value:
+#      name: none
+#  - op: replace
+#    path: /cluster/proxy/disabled
+#    value: true
 
   # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+  # when you're using cilium. Calico _might_ be able to use this as well.
   # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
-  - op: add
-    path: /machine/features
-    value:
-      kubePrism:
-        enabled: true
-        port: 7445
+#  - op: add
+#    path: /machine/features
+#    value:
+#      kubePrism:
+#        enabled: true
+#        port: 7445
 
   # Required for using metrics API securely
   # https://www.talos.dev/v1.5/kubernetes-guides/configuration/deploy-metrics-server/#:~:text=By%20default%2C%20the%20certificates%20in,be%20recognized%20by%20metrics%2Dserver.
@@ -71,8 +74,11 @@ controlPlane:
 
 workerPools:
 - name: default-node-pool
+  publicNetwork:
+    enableIPv4: true
+    enableIPv6: false
   autoscaling:
-    enabled: true
+    enabled: false
     minNodes: 3
     maxNodes: 5
   replicas: 3
@@ -89,13 +95,14 @@ workerPools:
       enabled: true
 
   # kube-prism is a cool tool. This config should be applied to control plane and worker nodes
+  # when you're using cilium. Calico _might_ be able to use this as well.
   # https://www.talos.dev/v1.5/kubernetes-guides/configuration/kubeprism/
-  - op: add
-    path: /machine/features
-    value:
-      kubePrism:
-        enabled: true
-        port: 7445
+#  - op: add
+#    path: /machine/features
+#    value:
+#      kubePrism:
+#        enabled: true
+#        port: 7445
 
   # Required for using metrics API securely
   # https://www.talos.dev/v1.5/kubernetes-guides/configuration/deploy-metrics-server/#:~:text=By%20default%2C%20the%20certificates%20in,be%20recognized%20by%20metrics%2Dserver.

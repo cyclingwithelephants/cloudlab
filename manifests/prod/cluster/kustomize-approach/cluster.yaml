@@ -1,0 +1,245 @@
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: TalosConfigTemplate
+metadata:
+  name: cloudlab-default-node-pool
+  namespace: cluster
+spec:
+  template:
+    spec:
+      configPatches:
+        - op: add
+          path: /cluster/externalCloudProvider
+          value:
+            enabled: true
+        - op: add
+          path: /machine/features
+          value:
+            kubePrism:
+              enabled: true
+              port: 7445
+        - op: add
+          path: /machine/kubelet/extraArgs
+          value:
+            rotate-server-certificates: true
+      generateType: worker
+      talosVersion: v1.5.1
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: cloudlab
+  namespace: cluster
+spec:
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: TalosControlPlane
+    name: cloudlab-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: HetznerCluster
+    name: cloudlab
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  annotations:
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "5"
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "3"
+  labels:
+    nodepool: cloudlab-default-node-pool
+  name: cloudlab-default-node-pool
+  namespace: cluster
+spec:
+  clusterName: cloudlab
+  replicas: 3
+  selector:
+    matchLabels: null
+  template:
+    metadata:
+      labels:
+        nodepool: cloudlab-default-node-pool
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+          kind: TalosConfigTemplate
+          name: cloudlab-default-node-pool
+      clusterName: cloudlab
+      failureDomain: fsn1
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: HCloudMachineTemplate
+        name: cloudlab-default-node-pool
+      version: v1.27.2
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineHealthCheck
+metadata:
+  name: cloudlab-control-plane
+  namespace: cluster
+spec:
+  clusterName: cloudlab
+  maxUnhealthy: 100%
+  nodeStartupTimeout: 10m
+  remediationTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: HCloudRemediationTemplate
+    name: restart
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/control-plane: ""
+  unhealthyConditions:
+    - status: Unknown
+      timeout: 180s
+      type: Ready
+    - status: "False"
+      timeout: 180s
+      type: Ready
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineHealthCheck
+metadata:
+  name: cloudlab-default-node-pool
+  namespace: cluster
+spec:
+  clusterName: cloudlab
+  maxUnhealthy: 100%
+  nodeStartupTimeout: 10m
+  remediationTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: HCloudRemediationTemplate
+    name: restart
+  selector:
+    matchLabels:
+      nodepool: cloudlab-default-node-pool
+  unhealthyConditions:
+    - status: Unknown
+      timeout: 180s
+      type: Ready
+    - status: "False"
+      timeout: 180s
+      type: Ready
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: TalosControlPlane
+metadata:
+  name: cloudlab-control-plane
+  namespace: cluster
+spec:
+  controlPlaneConfig:
+    controlplane:
+      configPatches:
+        - op: add
+          path: /cluster/externalCloudProvider
+          value:
+            enabled: true
+        - op: add
+          path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces
+          value:
+            - kube-system
+            - logging
+            - caph-system
+            - cacppt-system
+            - cabpt-system
+        - op: add
+          path: /cluster/apiServer/certSANs/-
+          value: cloudlab.prod.adamland.xyz
+        - op: add
+          path: /cluster/apiServer/certSANs/-
+          value: 10.0.0.2
+        - op: add
+          path: /cluster/network/cni
+          value:
+            name: none
+        - op: replace
+          path: /cluster/proxy/disabled
+          value: true
+        - op: add
+          path: /machine/features
+          value:
+            kubePrism:
+              enabled: true
+              port: 7445
+        - op: add
+          path: /machine/kubelet/extraArgs
+          value:
+            rotate-server-certificates: true
+      generateType: controlplane
+      talosVersion: v1.5.1
+  infrastructureTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: HCloudMachineTemplate
+    name: cloudlab-control-plane
+  replicas: 3
+  version: v1.27.2
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HCloudMachineTemplate
+metadata:
+  name: cloudlab-control-plane
+  namespace: cluster
+spec:
+  template:
+    spec:
+      imageName: talos-7fbaa897
+      placementGroupName: control-plane
+      publicNetwork:
+        enableIPv4: true
+        enableIPv6: false
+      type: cax11
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HCloudMachineTemplate
+metadata:
+  name: cloudlab-default-node-pool
+  namespace: cluster
+spec:
+  template:
+    spec:
+      imageName: talos-7fbaa897
+      placementGroupName: default-node-pool
+      publicNetwork:
+        enableIPv4: true
+        enableIPv6: false
+      type: cax11
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HCloudRemediationTemplate
+metadata:
+  name: restart
+  namespace: cluster
+spec:
+  template:
+    spec:
+      strategy:
+        retryLimit: 1
+        timeout: 180s
+        type: Reboot
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HetznerCluster
+metadata:
+  name: cloudlab
+  namespace: cluster
+spec:
+  controlPlaneEndpoint:
+    host: null
+    port: 443
+  controlPlaneLoadBalancer:
+    region: fsn1
+  controlPlaneRegions:
+    - fsn1
+  hcloudNetwork:
+    enabled: true
+  hcloudPlacementGroups:
+    - name: control-plane
+      type: spread
+    - name: default-node-pool
+      type: spread
+  hetznerSecretRef:
+    key:
+      hcloudToken: token
+    name: hcloud
+  sshKeys:
+    hcloud:
+      - name: cluster-nodes

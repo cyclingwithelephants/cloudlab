@@ -4,12 +4,15 @@
 env=${1:-prod}
 [[ "${env}" != "prod" ]] && [[ "${env}" != "stage" ]] && echo "env must be either prod or stage" && exit 1
 
+export HCLOUD_TOKEN_CCM="$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-prod/tokens/ccm)"
+export HCLOUD_TOKEN_CAPH="$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-prod/tokens/capi)"
+
 clusterctl_init() {
   clusterctl init \
-    --core           'cluster-api:v1.5.1' \
-    --bootstrap      'talos:v0.6.0' \
-    --control-plane  'talos:v0.5.1' \
-    --infrastructure 'hetzner:v1.0.0-beta.21' \
+    --core           cluster-api \
+    --bootstrap      talos \
+    --control-plane  talos \
+    --infrastructure hetzner \
     --wait-providers
 }
 
@@ -23,7 +26,7 @@ write_capi_secret() {
   # 5. Create the k8s secret, allowing the management cluster to auth with Hetzner.
   kubectl create secret generic hcloud \
     -n cluster \
-    --from-literal=token=$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-prod/tokens/capi)
+    --from-literal=token="${HCLOUD_TOKEN_CAPH}"
 
   # 6. We also patch the created secret so it is automatically moved to the target
   #    cluster later. This will enable the cluster to manage itself.
@@ -33,12 +36,12 @@ write_capi_secret() {
 }
 
 apply_manifests_at() {
-  kustomize build --enable-helm $1 | kubectl apply -f -
+  kustomize build --enable-helm "$1" | kubectl apply -f -
 }
 
 generate_cluster() {
   # 7. Generate the cluster
-  apply_manifests_at manifests/${env}/cluster
+  apply_manifests_at "manifests/${env}/cluster"
   sleep 10
 
   # 8. Wait for the cluster to be ready
@@ -58,7 +61,7 @@ get_workload_kubeconfig() {
 
 initialise_workload_cluster() {
 
-  apply_manifests_at manifests/prod/addons/cilium
+#  apply_manifests_at manifests/prod/addons/cilium
 
   # 10. Deploy the Hetzner cloud controller manager
   # allows the hccm to auth with hetzner
@@ -66,7 +69,7 @@ initialise_workload_cluster() {
   # It happens to be the same as the cluster name.
   kubectl create secret generic hcloud \
     -n kube-system \
-    --from-literal=token=$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-${env}/tokens/ccm) \
+    --from-literal=token="${HCLOUD_TOKEN_CCM}" \
     --from-literal=network=cloudlab
   apply_manifests_at manifests/prod/addons/hcloud-ccm
 
@@ -89,7 +92,7 @@ initialise_workload_cluster() {
   #  name: aws-parameter-store
   #  namespace: external-secrets
   # ---
-  kubectl apply -f manifests/groups/prod/secrets/external-secrets.yaml
+  kubectl apply -f manifests/prod/secrets/external-secrets.yaml
 
   # 13. Move the cluster installation from the managing cluster to the
   #     managed cluster, so that the cluster manages itself
@@ -102,8 +105,12 @@ initialise_workload_cluster() {
 # 1. start at root of repo
 cd $(dirname $0)/..
 
-clusterctl_init
+#clusterctl_init
 write_capi_secret
 generate_cluster
 get_workload_kubeconfig
 initialise_workload_cluster
+
+
+# ensure all nodes are ready
+# kubectl wait --for=condition=Ready nodes --all --timeout=600s

@@ -6,3 +6,7 @@ talos:
 
 talos-config:
 	kubectl get secret cloudlab-talosconfig -n cluster -o json | jq -r ".data.talosconfig" | base64 -D > ${HOME}/.talos/config
+
+cleanup:
+	unset KUBECONFIG;
+	kustomize build --enable-helm manifests/prod/cluster | kubectl delete  -f -;

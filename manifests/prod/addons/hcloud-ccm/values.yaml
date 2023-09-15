@@ -1,5 +1,7 @@
 networking:
   enabled: true
-  clusterCIDR: '10.0.0.0/8'
+  # If networking is enabled, clusterCIDR must match the PodCIDR subnet your cluster has been configured with.
+  # The default "10.244.0.0/16" assumes you're using Flannel with default configuration.
+  #  clusterCIDR: '10.0.0.0/8'
 args:
   route-reconciliation-period: 30s
