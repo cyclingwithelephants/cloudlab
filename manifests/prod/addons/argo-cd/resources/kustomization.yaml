@@ -5,3 +5,4 @@ resources:
 - applicationset-addons.yaml
 - applicationset-cluster.yaml
 - in-cluster.yaml
+- ingress-ui.yaml

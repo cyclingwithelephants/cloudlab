@@ -7,5 +7,5 @@ spec:
   dnsNames:
     - grafana.prod.adamland.xyz
   issuerRef:
-    name: letsencrypt-stage
+    name: letsencrypt-prod
     kind: ClusterIssuer

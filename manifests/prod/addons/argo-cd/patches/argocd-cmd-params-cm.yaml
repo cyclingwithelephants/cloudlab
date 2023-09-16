@@ -7,5 +7,8 @@ data:
   # this is an alpha feature
   # https://argo-cd.readthedocs.io/en/latest/operator-manual/applicationset/Progressive-Syncs/
   #  applicationsetcontroller.enable.progressive.syncs: 'true'
-#  redis.server: argo-cd-redis-ha-haproxy:6379
+
+  # This enables us to terminate TLS at ingress
+  # and not re-initiate from ingress -> argocd-server
+  # this allows us to collect metrics with a service mesh
   server.insecure: "true"

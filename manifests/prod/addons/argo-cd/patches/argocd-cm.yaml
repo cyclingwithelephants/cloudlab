@@ -6,12 +6,27 @@ metadata:
 data:
   # this allows us to use helmCharts in kustomization.yaml files
   # it's a convenient way to reference remote helm charts
-  kustomize.buildOptions: '--enable-helm'
+  kustomize.buildOptions: --enable-helm
   # Crossplane requires us to change the default way ArgoCD uses to track resource ownership
   # https://docs.crossplane.io/knowledge-base/integrations/argo-cd-crossplane/#configuring-argo-cd-with-crossplane
-  application.resourceTrackingMethod: 'annotation'
+  application.resourceTrackingMethod: annotation
   # enables a terminal to the running pods in the ArgoCD UI
   #  exec.enabled: "true"
 
-  timeout.reconciliation: 180s
-  timeout.hard.reconciliation: 600s
+  timeout.reconciliation: 3m0s
+  timeout.hard.reconciliation: 5m0s
+
+# once I've handled SSO, disable the admin user
+#  admin.enabled: false
+
+# Looks like you realistically need a github org to use SSO this way
+# https://dexidp.io/docs/connectors/github/
+#  dex.config: |
+#    connectors:
+#      # GitHub example
+#      - type: github
+#        id: github
+#        name: GitHub
+#        config:
+#          clientID: 2c4e746b39d42c6d2889
+#          clientSecret: $dex.github.clientSecret # Alternatively $<some_K8S_secret>:dex.github.clientSecret

@@ -45,9 +45,9 @@ generate_cluster() {
 
 initialise_workload_cluster() {
 
-    unset KUBECONFIG
-    clusterctl get kubeconfig cloudlab -n cluster > /tmp/workload-kubeconfig
-    export KUBECONFIG=/tmp/workload-kubeconfig
+  unset KUBECONFIG
+  clusterctl get kubeconfig cloudlab -n cluster > /tmp/workload-kubeconfig
+  export KUBECONFIG=/tmp/workload-kubeconfig
 
   # 10. Deploy the Hetzner cloud controller manager
   # allows the hccm to auth with hetzner
@@ -57,10 +57,6 @@ initialise_workload_cluster() {
 
   # 11. Deploy ArgoCD, so that the cluster will begin deploying its own workloads
   apply_manifests_at manifests/prod/addons/namespaces
-  sleep 5
-  apply_manifests_at manifests/prod/addons/argo-cd
-  sleep 1
-  apply_manifests_at manifests/prod/addons/argo-cd
 
   # create some bootstrap secrets including:
   # - external-secrets secret
@@ -72,17 +68,21 @@ initialise_workload_cluster() {
   #     managed cluster, so that the cluster manages itself
   clusterctl_init # in the new cluster
   unset KUBECONFIG
-  clusterctl move --to-kubeconfig ${CAPH_WORKER_CLUSTER_KUBECONFIG}
+  clusterctl move --to-kubeconfig /tmp/workload-kubeconfig --namespace cluster
+
+  export KUBECONFIG=/tmp/workload-kubeconfig
+  apply_manifests_at manifests/prod/addons/argo-cd
+  apply_manifests_at manifests/prod/addons/argo-cd
 }
 
 
 # 1. start at root of repo
 cd $(dirname $0)/..
 
-kind create cluster
-clusterctl_init
-write_capi_secret
-generate_cluster
+#kind create cluster
+#clusterctl_init
+#write_capi_secret
+#generate_cluster
 initialise_workload_cluster
 
 

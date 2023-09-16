@@ -16,7 +16,7 @@ spec:
       - dns01:
           cloudflare:
             email: adamrummer@gmail.com
-            apiKeySecretRef:
+            apiTokenSecretRef:
               name: cloudflare-api-token
               key: api-token
         selector:
