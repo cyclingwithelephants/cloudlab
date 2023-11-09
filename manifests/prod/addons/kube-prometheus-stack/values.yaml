@@ -9,3 +9,21 @@ grafana:
     tls:
       - secretName: grafana-tls
         hosts: *grafanaHost
+
+  replicas: 2
+#  autoscaling:
+#    enabled: true
+#  podDisruptionBudget:
+#    apiVersion: v1
+#    maxUnavailable: 1
+
+  envFromSecret: "api-tokens-grafana-cloud"
+
+  additionalDataSources:
+  - name: Loki
+    basicAuth: true
+    basicAuthPassword: $API_TOKEN_LOKI_READ
+    basicAuthUser: 640440
+    editable: false
+    type: loki
+    url: https://logs-prod-008.grafana.net

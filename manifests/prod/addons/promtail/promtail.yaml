@@ -270,7 +270,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: api-token-grafana-cloud
-                  key: API_TOKEN_PROMTAIL
+                  key: API_TOKEN_PROMTAIL_WRITE
           image: grafana/promtail:2.7.1
           imagePullPolicy: Always
           name: promtail
