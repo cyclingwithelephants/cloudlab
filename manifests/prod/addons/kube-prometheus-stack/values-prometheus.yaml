@@ -1,0 +1,24 @@
+prometheus:
+  agentMode: true
+
+  prometheusSpec:
+    replicas: 2
+
+    remoteWrite:
+      - name: grafana-cloud
+        url: https://prometheus-prod-05-gb-south-0.grafana.net/api/prom/push
+        basicAuth:
+          username:
+            name: api-tokens-grafana-cloud
+            key: API_TOKEN_PROMETHEUS_WRITE_USERNAME
+          password:
+            name: api-tokens-grafana-cloud
+            key: API_TOKEN_PROMETHEUS_WRITE
+
+    topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+       matchLabels:
+         app: prometheus

@@ -22,7 +22,7 @@ grafana:
   additionalDataSources:
   - name: Loki
     basicAuth: true
-    basicAuthPassword: $API_TOKEN_LOKI_READ
+    basicAuthPassword: $API_TOKEN_GRAFANA_READ # this gets hydrated from an environment variable
     basicAuthUser: 640440
     editable: false
     type: loki

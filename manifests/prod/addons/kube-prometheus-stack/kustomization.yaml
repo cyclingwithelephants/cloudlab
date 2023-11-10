@@ -6,8 +6,11 @@ namespace: monitoring
 helmCharts:
   - name: kube-prometheus-stack
     includeCRDs: true
-    valuesFile: values.yaml # https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
+#    valuesFile: values.yaml # https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
     releaseName: kube-prometheus-stack
-    version: 47.2.0
+    version: 52.1.0
     repo: https://prometheus-community.github.io/helm-charts
     namespace: monitoring
+    additionalValuesFiles:
+      - values-grafana.yaml
+      - values-prometheus.yaml
