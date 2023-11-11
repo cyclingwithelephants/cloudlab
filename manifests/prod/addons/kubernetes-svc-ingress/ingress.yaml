@@ -1,0 +1,60 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernetes
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: cloudlab.prod.adamland.xyz
+      http:
+        paths:
+          - backend:
+              service:
+                name: kubernetes
+                port:
+                  number: 443
+            path: /
+            pathType: Prefix
+#  tls:
+#    - hosts:
+#        - *host
+#      secretName: kubernetes-tls
+#---
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  annotations:
+#    argocd.argoproj.io/tracking-id: argo-cd:networking.k8s.io/Ingress:argocd/argocd-server-http-ingress
+#    cert-manager.io/cluster-issuer: letsencrypt-prod
+#    kubectl.kubernetes.io/last-applied-configuration: |
+#      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"cert-manager.io/cluster-issuer":"letsencrypt-prod","nginx.ingress.kubernetes.io/backend-protocol":"HTTP","nginx.ingress.kubernetes.io/force-ssl-redirect":"true"},"name":"argocd-server-http-ingress","namespace":"argocd"},"spec":{"ingressClassName":"nginx","rules":[{"host":"argocd.prod.adamland.xyz","http":{"paths":[{"backend":{"service":{"name":"argocd-server","port":{"name":"http"}}},"path":"/","pathType":"Prefix"}]}}],"tls":[{"hosts":["argocd.prod.adamland.xyz"],"secretName":"argocd-ui-tls"}]}}
+#    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+#    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#spec:
+#  ingressClassName: nginx
+#  rules:
+#    - host: argocd.prod.adamland.xyz
+#      http:
+#        paths:
+#          - backend:
+#              service:
+#                name: argocd-server
+#                port:
+#                  name: http
+#            path: /
+#            pathType: Prefix
+#  tls:
+#    - hosts:
+#        - argocd.prod.adamland.xyz
+#      secretName: argocd-ui-tls
+#status:
+#  loadBalancer:
+#    ingress:
+#      - ip: 10.0.0.9
+#      - ip: 142.132.244.53
+#      - ip: 2a01:4f8:c01e:208::1
