@@ -8,8 +8,8 @@ controller:
       load-balancer.hetzner.cloud/location: fsn1 # specify a cloud region for hetzner cloud
 
   autoscaling:
-#    enabled: true
+    enabled: true
     minReplicas: 2
-    maxReplicas: 4
+    maxReplicas: 3
 
   maxUnavailable: 1
