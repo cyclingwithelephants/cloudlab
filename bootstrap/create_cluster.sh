@@ -79,10 +79,10 @@ initialise_workload_cluster() {
 # 1. start at root of repo
 cd $(dirname $0)/..
 
-#kind create cluster
-#clusterctl_init
-#write_capi_secret
-#generate_cluster
+kind create cluster
+clusterctl_init
+write_capi_secret
+generate_cluster
 initialise_workload_cluster
 
 
