@@ -89,7 +89,7 @@ workerPools:
   #    enabled: false
   #    minNodes: 3
   #    maxNodes: 5
-  replicas: 4
+  replicas: 3
   versions:
     talos: *talosVersion
     kubernetes: *k8sVersion
