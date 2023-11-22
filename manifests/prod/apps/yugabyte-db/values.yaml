@@ -6,8 +6,10 @@ fullnameOverride: ""
 nameOverride: ""
 
 Image:
-  repository: "yugabytedb/yugabyte"
-  tag: 2.19.3.0-b140
+  # building custom ARM images until this issue is addressed
+  # https://github.com/yugabyte/yugabyte-db/issues/10909#issuecomment-1127997821
+  repository: "marmiteforlife/yugabyte"
+  tag: 2.20.0
   pullPolicy: IfNotPresent
   pullSecretName: ""
 
