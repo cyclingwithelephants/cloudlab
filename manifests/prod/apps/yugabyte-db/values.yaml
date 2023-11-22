@@ -1,0 +1,434 @@
+# https://github.com/yugabyte/charts/blob/master/stable/yugabyte/values.yaml
+
+Component: "yugabytedb"
+
+fullnameOverride: ""
+nameOverride: ""
+
+Image:
+  repository: "yugabytedb/yugabyte"
+  tag: 2.19.3.0-b140
+  pullPolicy: IfNotPresent
+  pullSecretName: ""
+
+storage:
+  ephemeral: false  # will not allocate PVs when true
+  master:
+    count: 2
+    size: 10Gi
+    storageClass: ""
+  tserver:
+    count: 2
+    size: 10Gi
+    storageClass: ""
+
+# I edited these to be lighter than suggested. This might break things.
+resource:
+  master:
+    requests:
+      cpu: "1"
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+  tserver:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+replicas:
+  master: 3
+  tserver: 3
+  ## Used to set replication factor when isMultiAz is set to true
+  totalMasters: 3
+
+partition:
+  master: 0
+  tserver: 0
+
+updateStrategy:
+  type: RollingUpdate
+
+# Used in Multi-AZ setup
+masterAddresses: ""
+
+isMultiAz: false
+AZ: ""
+
+# Disable the YSQL
+disableYsql: true
+
+tls:
+  # Set to true to enable the TLS.
+  enabled: false
+  nodeToNode: true
+  clientToServer: true
+  # Set to false to disallow any service with unencrypted communication from joining this cluster
+  insecure: false
+  # Set enabled to true to use cert-manager instead of providing your own rootCA
+  certManager:
+    enabled: true
+    # Will create own ca certificate and issuer when set to true
+    bootstrapSelfsigned: true
+    # Use ClusterIssuer when set to true, otherwise use Issuer
+    useClusterIssuer: false
+    # Name of ClusterIssuer to use when useClusterIssuer is true
+    clusterIssuer: cluster-ca
+    # Name of Issuer to use when useClusterIssuer is false
+    issuer: yugabyte-ca
+    certificates:
+      # The lifetime before cert-manager will issue a new certificate.
+      # The re-issued certificates will not be automatically reloaded by the service.
+      # It is necessary to provide some external means of restarting the pods.
+      duration: 2160h # 90d
+      renewBefore: 360h # 15d
+      algorithm: ECDSA # ECDSA or RSA
+      # Can be 2048, 4096 or 8192 for RSA
+      # Or 256, 384 or 521 for ECDSA
+      keySize: 512
+
+PodManagementPolicy: Parallel
+
+enableLoadBalancer: false
+
+ybc:
+  enabled: false
+
+domainName: "cluster.local"
+
+serviceEndpoints:
+  - name: "yb-master-ui"
+    type: clusterIP
+#    annotations: {}
+#    clusterIP: ""
+    externalTrafficPolicy: ""
+    app: "yb-master"
+    ports:
+      http-ui: "7000"
+
+  - name: "yb-tserver-service"
+    type: clusterIP
+    annotations: {}
+    clusterIP: ""
+    app: "yb-tserver"
+    ports:
+      tcp-yql-port: "9042"
+      tcp-yedis-port: "6379"
+      tcp-ysql-port: "5433"
+
+Services:
+  - name: "yb-masters"
+    label: "yb-master"
+    skipHealthChecks: false
+    memory_limit_to_ram_ratio: 0.85
+    ports:
+      http-ui: "7000"
+      tcp-rpc-port: "7100"
+
+  - name: "yb-tservers"
+    label: "yb-tserver"
+    skipHealthChecks: false
+    ports:
+      http-ui: "9000"
+      tcp-rpc-port: "9100"
+      tcp-yql-port: "9042"
+      tcp-yedis-port: "6379"
+      tcp-ysql-port: "5433"
+      http-ycql-met: "12000"
+      http-yedis-met: "11000"
+      http-ysql-met: "13000"
+      grpc-ybc-port: "18018"
+
+
+## Should be set to true only if Istio is being used. This also adds
+## the Istio sidecar injection labels to the pods.
+## TODO: remove this once
+## https://github.com/yugabyte/yugabyte-db/issues/5641 is fixed.
+##
+istioCompatibility:
+  enabled: false
+
+serviceMonitor:
+  ## If true, two ServiceMonitor CRs are created. One for yb-master
+  ## and one for yb-tserver
+  ## https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#servicemonitor
+  ##
+  enabled: false
+  ## interval is the default scrape_interval for all the endpoints
+  interval: 30
+  ## extraLabels can be used to add labels to the ServiceMonitors
+  ## being created
+  extraLabels: {}
+    # release: prom
+
+  ## Configurations of ServiceMonitor for yb-master
+  master:
+    enabled: true
+    port: "http-ui"
+    interval: ""
+    path: "/prometheus-metrics"
+
+  ## Configurations of ServiceMonitor for yb-tserver
+  tserver:
+    enabled: true
+    port: "http-ui"
+    interval: ""
+    path: "/prometheus-metrics"
+  ycql:
+    enabled: true
+    port: "http-ycql-met"
+    interval: ""
+    path: "/prometheus-metrics"
+  ysql:
+    enabled: true
+    port: "http-ysql-met"
+    interval: ""
+    path: "/prometheus-metrics"
+  yedis:
+    enabled: true
+    port: "http-yedis-met"
+    interval: ""
+    path: "/prometheus-metrics"
+
+  commonMetricRelabelings:
+  # https://git.io/JJW5p
+  # Save the name of the metric so we can group_by since we cannot by __name__ directly...
+  - sourceLabels: ["__name__"]
+    regex: "(.*)"
+    targetLabel: "saved_name"
+    replacement: "$1"
+  # The following basically retrofit the handler_latency_* metrics to label format.
+  - sourceLabels: ["__name__"]
+    regex: "handler_latency_(yb_[^_]*)_([^_]*)_([^_]*)(.*)"
+    targetLabel: "server_type"
+    replacement: "$1"
+  - sourceLabels: ["__name__"]
+    regex: "handler_latency_(yb_[^_]*)_([^_]*)_([^_]*)(.*)"
+    targetLabel: "service_type"
+    replacement: "$2"
+  - sourceLabels: ["__name__"]
+    regex: "handler_latency_(yb_[^_]*)_([^_]*)_([^_]*)(_sum|_count)?"
+    targetLabel: "service_method"
+    replacement: "$3"
+  - sourceLabels: ["__name__"]
+    regex: "handler_latency_(yb_[^_]*)_([^_]*)_([^_]*)(_sum|_count)?"
+    targetLabel: "__name__"
+    replacement: "rpc_latency$4"
+
+resources: {}
+
+nodeSelector: {}
+
+affinity: {}
+
+statefulSetAnnotations: {}
+
+networkAnnotation: {}
+
+commonLabels: {}
+
+## @param dnsPolicy DNS Policy for pod
+## ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+## E.g.
+## dnsPolicy: ClusterFirst
+dnsPolicy: ""
+## @param dnsConfig DNS Configuration pod
+## ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
+## E.g.
+## dnsConfig:
+##   options:
+##   - name: ndots
+##     value: "4"
+dnsConfig: {}
+
+
+master:
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#affinity-v1-core
+  ## This might override the default affinity from service.yaml
+  # To successfully merge, we need to follow rules for merging nodeSelectorTerms that kubernentes 
+  # has. Each new node selector term is ORed together, and each match expression or match field in 
+  # a single selector is ANDed together. 
+  # This means, if a pod needs to be scheduled on a label 'custom_label_1' with a value 
+  # 'custom_value_1', we need to add this 'subterm' to each of our pre-defined node affinity
+  # terms.
+  #
+  # Pod anti affinity is a simpler merge. Each term is applied separately, and the weight is tracked.
+  # The pod that achieves the highest weight is selected.
+  ## Example.
+  affinity:
+   podAntiAffinity:
+     requiredDuringSchedulingIgnoredDuringExecution:
+     - labelSelector:
+         matchExpressions:
+         - key: app
+           operator: In
+           values:
+           - "yb-master"
+       topologyKey: kubernetes.io/hostname
+
+  ## Extra environment variables passed to the Master pods.
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#envvar-v1-core
+  ## Example:
+  # extraEnv:
+  # - name: NODE_IP
+  #   valueFrom:
+  #     fieldRef:
+  #       fieldPath: status.hostIP
+  extraEnv: []
+
+  # secretEnv variables are used to expose secrets data as env variables in the master pod.
+  # TODO Add namespace also to support copying secrets from other namespace.
+  # secretEnv:
+  # - name: MYSQL_LDAP_PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: secretName
+  #       key: password
+  secretEnv: []
+
+  ## Annotations to be added to the Master pods.
+  podAnnotations: {}
+
+  ## Labels to be added to the Master pods.
+  podLabels: {}
+
+  ## Tolerations to be added to the Master pods.
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#toleration-v1-core
+  ## Example:
+  # tolerations:
+  # - key: dedicated
+  #   operator: Equal
+  #   value: experimental
+  #   effect: NoSchedule
+  tolerations: []
+
+  ## Extra volumes
+  ## extraVolumesMounts are mandatory for each extraVolumes.
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#volume-v1-core
+  ## Example:
+  # extraVolumes:
+  # - name: custom-nfs-vol
+  #   persistentVolumeClaim:
+  #     claimName: some-nfs-claim
+  extraVolumes: []
+
+  ## Extra volume mounts
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#volumemount-v1-core
+  ## Example:
+  # extraVolumeMounts:
+  # - name: custom-nfs-vol
+  #   mountPath: /home/yugabyte/nfs-backup
+  extraVolumeMounts: []
+
+  ## Set service account for master DB pods. The service account
+  ## should exist in the namespace where the master DB pods are brought up.
+  serviceAccount: ""
+
+
+tserver:
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#affinity-v1-core
+  ## This might override the default affinity from service.yaml
+  # To successfully merge, we need to follow rules for merging nodeSelectorTerms that kubernentes 
+  # has. Each new node selector term is ORed together, and each match expression or match field in 
+  # a single selector is ANDed together. 
+  # This means, if a pod needs to be scheduled on a label 'custom_label_1' with a value 
+  # 'custom_value_1', we need to add this 'subterm' to each of our pre-defined node affinity
+  # terms.
+  #
+  # Pod anti affinity is a simpler merge. Each term is applied separately, and the weight is tracked.
+  # The pod that achieves the highest weight is selected.
+  ## Example.
+  affinity:
+   podAntiAffinity:
+     requiredDuringSchedulingIgnoredDuringExecution:
+     - labelSelector:
+         matchExpressions:
+         - key: app
+           operator: In
+           values:
+           - "yb-tserver"
+       topologyKey: kubernetes.io/hostname      
+
+  ## Extra environment variables passed to the TServer pods.
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#envvar-v1-core
+  ## Example:
+  # extraEnv:
+  # - name: NODE_IP
+  #   valueFrom:
+  #     fieldRef:
+  #       fieldPath: status.hostIP
+  extraEnv: []
+
+  ## secretEnv variables are used to expose secrets data as env variables in the tserver pods.
+  ## If namespace field is not specified we assume that user already
+  ## created the secret in the same namespace as DB pods.
+  ## Example
+  # secretEnv:
+  # - name: MYSQL_LDAP_PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: secretName
+  #       namespace: my-other-namespace-with-ldap-secret
+  #       key: password
+  secretEnv: []
+
+  ## Annotations to be added to the TServer pods.
+  podAnnotations: {}
+
+  ## Labels to be added to the TServer pods.
+  podLabels: {}
+
+  ## Tolerations to be added to the TServer pods.
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#toleration-v1-core
+  ## Example:
+  # tolerations:
+  # - key: dedicated
+  #   operator: Equal
+  #   value: experimental
+  #   effect: NoSchedule
+  tolerations: []
+
+  ## Sets the --server_broadcast_addresses flag on the TServer, no
+  ## preflight checks are done for this address. You might need to add
+  ## `use_private_ip: cloud` to the gflags.master and gflags.tserver.
+  serverBroadcastAddress: ""
+
+  ## Extra volumes
+  ## extraVolumesMounts are mandatory for each extraVolumes.
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#volume-v1-core
+  ## Example:
+  # extraVolumes:
+  # - name: custom-nfs-vol
+  #   persistentVolumeClaim:
+  #     claimName: some-nfs-claim
+  extraVolumes: []
+
+  ## Extra volume mounts
+  ## Ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#volumemount-v1-core
+  ## Example:
+  # extraVolumeMounts:
+  # - name: custom-nfs-vol
+  #   path: /home/yugabyte/nfs-backup
+  extraVolumeMounts: []
+
+  ## Set service account for tserver DB pods. The service account
+  ## should exist in the namespace where the tserver DB pods are brought up.
+  serviceAccount: ""
+
+helm2Legacy: false
+
+ip_version_support: "v4_only" # v4_only, v6_only are the only supported values at the moment
+
+# For more https://docs.yugabyte.com/latest/reference/configuration/yugabyted/#environment-variables
+authCredentials:
+  ysql:
+    user: ""
+    password: ""
+    database: ""
+  ycql:
+    user: ""
+    password: ""
+    keyspace: ""
