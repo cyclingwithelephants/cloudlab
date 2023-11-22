@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-config
+data:
+  # https://goauthentik.io/docs/installation/configuration
+  AUTHENTIK_LOG_LEVEL: 'info'
+  AUTHENTIK_POSTGRESQL__USE_PGBOUNCER: 'false'
+  AUTHENTIK_POSTGRESQL__USE_PGPOOL: 'false'
+  AUTHENTIK_POSTGRESQL__SSLMODE: 'verify-ca'
+  AUTHENTIK_DISABLE_UPDATE_CHECK: 'true'

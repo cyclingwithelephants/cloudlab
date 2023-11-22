@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: authentik
+
+resources:
+  - resources/postgres.yaml
+  - resources/configmap.yaml
+
+helmCharts:
+  - name: authentik
+    includeCRDs: true
+    valuesFile: values.yaml
+    releaseName: authentik
+    version: 2023.10.4
+    repo: https://charts.goauthentik.io/

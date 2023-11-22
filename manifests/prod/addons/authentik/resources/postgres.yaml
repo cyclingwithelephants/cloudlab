@@ -1,0 +1,13 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg
+spec:
+  instances: 3
+  primaryUpdateStrategy: unsupervised # automated update of the primary once all replicas have been upgraded
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+  storage:
+    size: 5Gi
