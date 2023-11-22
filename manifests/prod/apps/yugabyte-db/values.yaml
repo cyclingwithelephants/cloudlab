@@ -88,7 +88,7 @@ tls:
       algorithm: ECDSA # ECDSA or RSA
       # Can be 2048, 4096 or 8192 for RSA
       # Or 256, 384 or 521 for ECDSA
-      keySize: 512
+      keySize: 521
 
 PodManagementPolicy: Parallel
 
@@ -432,3 +432,7 @@ authCredentials:
     user: ""
     password: ""
     keyspace: ""
+
+Capabilities:
+  APIVersions:
+    Has: "policy/v1/PodDisruptionBudget"

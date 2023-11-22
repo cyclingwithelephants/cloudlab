@@ -12,3 +12,4 @@ resources:
 - loft.yaml
 - logging.yaml
 - monitoring.yaml
+- yugabytedb.yaml
