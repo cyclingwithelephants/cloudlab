@@ -1,29 +1,54 @@
 grafana:
+  grafana.ini:
+    # https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md#how-to-securely-reference-secrets-in-grafanaini
+    auth:
+      signout_redirect_url: "https://authentik.prod.adamland.xyz/application/o/grafana/end-session/"
+      oauth_auto_login: true
+    auth.generic_oauth:
+      name: authentik
+      auto_login: true
+      enabled: true
+      client_id:     $__file{/etc/secrets/authentik-oauth/client_id} # means "read the value from this file and insert it here"
+      client_secret: $__file{/etc/secrets/authentik-oauth/client_secret}
+      scopes: "openid profile email"
+      auth_url:  "https://authentik.prod.adamland.xyz/application/o/authorize/"
+      token_url: "https://authentik.prod.adamland.xyz/application/o/token/"
+      api_url:   "https://authentik.prod.adamland.xyz/application/o/userinfo/"
+      # Optionally map user groups to Grafana roles
+      role_attribute_path: contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'power users') && 'Editor' || 'Viewer'
+
+    server:
+      root_url: "https://grafana.prod.adamland.xyz/"
+
   ingress:
     enabled: true
-    hosts: &grafanaHost [grafana.prod.adamland.xyz]
+    ingressClassName: nginx
+    hosts: &domain [grafana.prod.adamland.xyz]
     annotations:
-     kubernetes.io/ingress.class: nginx
-     kubernetes.io/tls-acme: "true"
-     cert-manager.io/cluster-issuer: letsencrypt-prod
+      cert-manager.io/cluster-issuer: letsencrypt-prod
     tls:
       - secretName: grafana-tls
-        hosts: *grafanaHost
+        hosts: *domain
 
-  replicas: 2
-#  autoscaling:
-#    enabled: true
-#  podDisruptionBudget:
-#    apiVersion: v1
-#    maxUnavailable: 1
+  # I think it needs postgres in HA mode? seems to use SQLite natively
+  # https://community.grafana.com/t/user-token-not-found/69071
+  replicas: 1
+
 
   envFromSecret: "api-tokens-grafana-cloud"
 
   additionalDataSources:
   - name: Loki
     basicAuth: true
-    basicAuthPassword: $API_TOKEN_GRAFANA_READ # this gets hydrated from an environment variable
+    basicAuthPassword: $API_TOKEN_READ_PROMETHEUS # this gets hydrated from an environment variable
     basicAuthUser: 640440
     editable: false
     type: loki
     url: https://logs-prod-008.grafana.net
+
+  extraSecretMounts:
+  - name: authentik-oauth-grafana
+    secretName: authentik-oauth-grafana
+    defaultMode: 0440
+    mountPath: /etc/secrets/authentik-oauth
+    readOnly: true

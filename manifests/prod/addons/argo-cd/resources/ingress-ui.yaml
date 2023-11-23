@@ -19,8 +19,7 @@ spec:
             name: argocd-server
             port:
               name: http
-    host: argocd.prod.adamland.xyz
+    host: &domain argocd.prod.adamland.xyz
   tls:
-  - hosts:
-    - argocd.prod.adamland.xyz
+  - hosts: [*domain]
     secretName: argocd-ui-tls
