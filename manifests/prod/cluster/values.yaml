@@ -37,8 +37,6 @@ controlPlane:
     - logging
     - monitoring
 
-
-  # Add some additional cert SANs
   - op: add
     path: /cluster/apiServer/certSANs/-
     value: "cloudlab.prod.adamland.xyz"
@@ -47,7 +45,6 @@ controlPlane:
     path: /cluster/apiServer/certSANs/-
     value: "10.0.0.2"
 
-  # Enable the ResourceQuote resource
   - op: add
     path: /cluster/apiServer/extraArgs
     value:
