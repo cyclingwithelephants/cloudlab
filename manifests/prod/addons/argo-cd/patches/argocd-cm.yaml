@@ -6,11 +6,13 @@ data:
   # this allows us to use helmCharts in kustomization.yaml files
   # it's a convenient way to reference remote helm charts
   kustomize.buildOptions: --enable-helm
+    
   # Crossplane requires us to change the default way ArgoCD uses to track resource ownership
   # https://docs.crossplane.io/knowledge-base/integrations/argo-cd-crossplane/#configuring-argo-cd-with-crossplane
   application.resourceTrackingMethod: annotation
-  # enables a terminal to the running pods in the ArgoCD UI
-  #  exec.enabled: "true"
+
+  # it's generally considered best practice to disable the admin user
+  admin.enabled: "false"
 
   timeout.reconciliation: 3m0s
   timeout.hard.reconciliation: 5m0s
