@@ -4,7 +4,7 @@ namespace: logging
 
 resources:
 # https://grafana.com/orgs/cloudlabprod/hosted-logs/640440#sending-logs
-- promtail.yaml
+- promtail.yaml # this is a temporary measure. Eventually I'll probably move to R2 with a full Loki setup
 
 #helmCharts:
 #  - name: loki
