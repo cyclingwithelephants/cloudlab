@@ -38,13 +38,20 @@ grafana:
   envFromSecret: "api-tokens-grafana-cloud"
 
   additionalDataSources:
-  - name: Loki
-    basicAuth: true
-    basicAuthPassword: $API_TOKEN_READ_PROMETHEUS # this gets hydrated from an environment variable
-    basicAuthUser: 640440
-    editable: false
-    type: loki
-    url: https://logs-prod-008.grafana.net
+#  - name: Loki
+#    basicAuth: true
+#    basicAuthPassword: $API_TOKEN_READ_PROMETHEUS # this gets hydrated from an environment variable
+#    basicAuthUser: 640440
+#    editable: false
+#    type: loki
+#    url: https://logs-prod-008.grafana.net
+    - name: Mimir
+      basicAuth: false
+#      basicAuthPassword: $API_TOKEN_READ_PROMETHEUS # this gets hydrated from an environment variable
+#      basicAuthUser: 640440
+      editable: false
+      type: prometheus
+      url: http://mimir-query-frontend.monitoring:8080/prometheus
 
   extraSecretMounts:
   - name: authentik-oauth-grafana

@@ -5,8 +5,7 @@ prometheus:
     replicas: 2
 
     remoteWrite:
-      remote_write:
-        - url: http://mimir-nginx.monitoring.svc.cluster.local/api/v1/push
+    - url: http://mimir-nginx.monitoring:8080/api/v1/push
 
     topologySpreadConstraints:
     - maxSkew: 1
@@ -16,8 +15,8 @@ prometheus:
        matchLabels:
          app: prometheus
 
-# https://github.com/grafana/helm-charts/issues/1320
-mimir:
-  structuredConfig:
-    limits:
-      max_global_series_per_user: 1000000
+## https://github.com/grafana/helm-charts/issues/1320
+#mimir:
+#  structuredConfig:
+#    limits:
+#      max_global_series_per_user: 1000000
