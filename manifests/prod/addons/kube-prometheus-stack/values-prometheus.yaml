@@ -5,15 +5,8 @@ prometheus:
     replicas: 2
 
     remoteWrite:
-      - name: grafana-cloud
-        url: https://prometheus-prod-05-gb-south-0.grafana.net/api/prom/push
-        basicAuth:
-          username:
-            name: api-tokens-grafana-cloud
-            key: USERNAME_WRITE_PROMETHEUS
-          password:
-            name: api-tokens-grafana-cloud
-            key: API_TOKEN_WRITE_PROMETHEUS
+      remote_write:
+        - url: http://mimir-nginx.monitoring.svc.cluster.local/api/v1/push
 
     topologySpreadConstraints:
     - maxSkew: 1
