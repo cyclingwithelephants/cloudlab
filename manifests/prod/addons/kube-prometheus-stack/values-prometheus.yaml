@@ -5,7 +5,7 @@ prometheus:
     replicas: 2
 
     remoteWrite:
-    - url: http://mimir-nginx.monitoring:8080/api/v1/push
+    - url: http://mimir-nginx.mimir:8080/api/v1/push
 
     topologySpreadConstraints:
     - maxSkew: 1
