@@ -51,7 +51,7 @@ grafana:
 #      basicAuthUser: 640440
       editable: false
       type: prometheus
-      url: http://mimir-query-frontend.monitoring:8080/prometheus
+      url: http://mimir-query-frontend.mimir:8080/prometheus
 
   extraSecretMounts:
   - name: authentik-oauth-grafana
