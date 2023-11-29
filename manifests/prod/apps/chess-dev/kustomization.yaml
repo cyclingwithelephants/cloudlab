@@ -4,3 +4,4 @@ namespace: chess-dev
 
 resources:
   - https://github.com/cevdetakiah/chess-website//deploy/dev/?ref=main
+  - postgres.yaml
