@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmCharts:
+  - name: terraform-operator
+    includeCRDs: true
+    valuesFile: values.yaml
+    releaseName: terraform-operator
+    version: 0.16.0
+    repo: https://galleybytes.github.io/helm-charts
+    namespace: terraform-operator
+    
