@@ -56,7 +56,7 @@ initialise_workload_cluster() {
   apply_manifests_at manifests/prod/addons/hcloud-ccm
 
   # 11. Deploy ArgoCD, so that the cluster will begin deploying its own workloads
-  apply_manifests_at manifests/prod/addons/namespaces
+  kubectl apply -f manifests/prod/addons/namespaces/
 
   # create some bootstrap secrets including:
   # - external-secrets secret

@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cacppt-controller-manager
+  namespace: cacppt-system
+spec:
+  template:
+    spec:
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"

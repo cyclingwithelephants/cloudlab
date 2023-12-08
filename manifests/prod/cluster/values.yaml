@@ -5,6 +5,7 @@ cluster:
   sshKey: cluster-nodes
 
 controlPlane:
+  replicas: 3
   versions:
     talos: &talosVersion v1.4.8 # Don't set this to anything other than what's specified in the machine image.
     kubernetes: &k8sVersion v1.27.4
