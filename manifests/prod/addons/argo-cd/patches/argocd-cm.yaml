@@ -12,7 +12,7 @@ data:
   application.resourceTrackingMethod: annotation
 
   # it's generally considered best practice to disable the admin user
-  admin.enabled: "false"
+  admin.enabled: "true" # TODO: disable this once Authentik declarative config is working
 
   timeout.reconciliation: 3m0s
   timeout.hard.reconciliation: 5m0s
