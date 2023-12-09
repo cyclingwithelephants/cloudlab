@@ -8,12 +8,22 @@ export HCLOUD_TOKEN_CCM="$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-prod
 export HCLOUD_TOKEN_CAPH="$(cat /Users/adam/.hetzner/cloud/projects/cloudlab-prod/tokens/capi)"
 
 clusterctl_init() {
-  clusterctl init \
-    --core           cluster-api \
-    --bootstrap      talos \
-    --control-plane  talos \
-    --infrastructure hetzner \
-    --wait-providers
+    apply_manifests_at manifests/prod/addons/cert-manager
+    kubectl wait --for=condition=Available --timeout=10m -n cert-manager  deployment.apps/cert-manager
+    kubectl wait --for=condition=Available --timeout=10m -n cert-manager  deployment.apps/cert-manager-cainjector
+    kubectl wait --for=condition=Available --timeout=10m -n cert-manager  deployment.apps/cert-manager-webhook
+    # we apply twice to overcome a race condition between custom resources and their definitions
+    apply_manifests_at manifests/prod/addons/cert-manager
+
+    apply_manifests_at manifests/prod/addons/capi-system
+    apply_manifests_at manifests/prod/addons/cabpt-system
+    apply_manifests_at manifests/prod/addons/cacppt-system
+    apply_manifests_at manifests/prod/addons/caph-system
+    kubectl wait --for=condition=Available --timeout=10m -n capi-system   deployment.apps/capi-controller-manager
+    kubectl wait --for=condition=Available --timeout=10m -n cabpt-system  deployment.apps/cabpt-controller-manager
+    kubectl wait --for=condition=Available --timeout=10m -n cacppt-system deployment.apps/cacppt-controller-manager
+    kubectl wait --for=condition=Available --timeout=10m -n caph-system   deployment.apps/caph-controller-manager
+
 }
 
 write_capi_secret() {

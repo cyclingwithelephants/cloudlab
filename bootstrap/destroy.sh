@@ -17,3 +17,6 @@ ips=$(hcloud floating-ip list | awk  '{print $2 }' | awk 'NR > 1')
 for ip in $ips; do
   hcloud floating-ip delete $ip
 done
+
+# delete load balancer
+hcloud load-balancer list | awk  '{print $2 }' | awk 'NR > 1' | xargs -I {} hcloud load-balancer delete {}
