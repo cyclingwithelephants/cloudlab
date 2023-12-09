@@ -2,13 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: crossplane-system
 
-resources:
-  - provider-aws-iam.yaml
+resources: [resources]
 
 helmCharts:
   - name: crossplane
     includeCRDs: true
-#    valuesFile: values.yaml
+    valuesFile: values.yaml
     releaseName: crossplane
-    version: 1.12.2
+    namespace: crossplane-system
+    version: 1.14.0
     repo: https://charts.crossplane.io/stable # this is the stable release channel

@@ -40,7 +40,7 @@ generate_cluster() {
   kubectl wait taloscontrolplane cloudlab-control-plane \
     -n cluster \
     --for=condition=Available \
-    --timeout=5m
+    --timeout=10m
 }
 
 initialise_workload_cluster() {
@@ -56,7 +56,7 @@ initialise_workload_cluster() {
   apply_manifests_at manifests/prod/addons/hcloud-ccm
 
   # 11. Deploy ArgoCD, so that the cluster will begin deploying its own workloads
-  apply_manifests_at manifests/prod/addons/namespaces
+  kubectl apply -f manifests/prod/addons/namespaces/
 
   # create some bootstrap secrets including:
   # - external-secrets secret
@@ -71,6 +71,8 @@ initialise_workload_cluster() {
   clusterctl move --to-kubeconfig /tmp/workload-kubeconfig --namespace cluster
 
   export KUBECONFIG=/tmp/workload-kubeconfig
+  # due to a race condition between custom resources and
+  # their definitions we apply the manifests twice
   apply_manifests_at manifests/prod/addons/argo-cd
   apply_manifests_at manifests/prod/addons/argo-cd
 }
@@ -88,3 +90,5 @@ initialise_workload_cluster
 
 # ensure all nodes are ready
 # kubectl wait --for=condition=Ready nodes --all --timeout=600s
+
+mv /tmp/workload-kubeconfig ~/.kube/config
