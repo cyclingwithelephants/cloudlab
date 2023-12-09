@@ -78,7 +78,7 @@ controlPlane:
       rotate-server-certificates: true
 
 workerPools:
-- name: cax21-node-pool
+- name: node-pool
   publicNetwork:
     enableIPv4: true
     enableIPv6: false
