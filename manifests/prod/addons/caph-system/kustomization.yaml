@@ -5,13 +5,4 @@ resources:
   - resources/provider.yaml
 
 patches:
-  - target:
-      kind: Deployment
-      name: caph-controller-manager
-    patch: |-
-      spec:
-        template:
-          spec:
-            tolerations:
-              - key: node-role.kubernetes.io/master
-                effect: NoSchedule
+  - path: patches/deployment.yaml
