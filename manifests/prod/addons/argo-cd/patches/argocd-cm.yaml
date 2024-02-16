@@ -19,8 +19,6 @@ data:
 
   url: https://argocd.prod.adamland.xyz
 
-  accounts.cevdet: apiKey, login
-
   dex.config: |
       connectors:
       - config:

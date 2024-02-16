@@ -6,4 +6,3 @@ data:
   policy.csv: |
     g, admins, role:admin
     g, devs, role:readonly
-    p, cevdet, *, *, *
