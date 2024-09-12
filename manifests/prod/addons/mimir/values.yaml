@@ -1,15 +1,123 @@
-controller:
-  extraArgs:
-    # this allows SSL termination at the service requiring an ingress.
-    # this is used for vcluster kube-api servers.
-    enable-ssl-passthrough: ""
-  service:
-    annotations:
-      load-balancer.hetzner.cloud/location: fsn1 # specify a cloud region for hetzner cloud
-
-  autoscaling:
+alertmanager:
+  persistentVolume:
     enabled: true
-    minReplicas: 2
-    maxReplicas: 3
+  replicas: 2
+  statefulSet:
+    enabled: true
 
-  maxUnavailable: 1
+compactor:
+  persistentVolume:
+    size: 5Gi
+
+distributor:
+  replicas: 2
+
+ingester:
+  persistentVolume:
+    size: 1Gi
+  replicas: 3
+  topologySpreadConstraints: {}
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: target # support for enterprise.legacyLabels
+                operator: In
+                values:
+                  - ingester
+          topologyKey: 'kubernetes.io/hostname'
+
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - ingester
+          topologyKey: 'kubernetes.io/hostname'
+
+  zoneAwareReplication:
+    topologyKey: 'kubernetes.io/hostname'
+
+admin-cache:
+  enabled: true
+  replicas: 2
+
+chunks-cache:
+  enabled: true
+  replicas: 2
+
+index-cache:
+  enabled: true
+  replicas: 3
+
+metadata-cache:
+  enabled: true
+
+results-cache:
+  enabled: true
+  replicas: 2
+
+minio:
+  enabled: false
+
+overrides_exporter:
+  replicas: 1
+
+querier:
+  replicas: 1
+
+query_frontend:
+  replicas: 1
+
+store_gateway:
+  persistentVolume:
+    size: 1Gi
+  replicas: 3
+  topologySpreadConstraints: {}
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: target # support for enterprise.legacyLabels
+                operator: In
+                values:
+                  - store-gateway
+          topologyKey: 'kubernetes.io/hostname'
+
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - store-gateway
+          topologyKey: 'kubernetes.io/hostname'
+  zoneAwareReplication:
+    topologyKey: 'kubernetes.io/hostname'
+
+mimir:
+  structuredConfig:
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint: 6ea2bf2699e109ad9c43e1364e6a907c.r2.cloudflarestorage.com
+          region: autota
+          secret_access_key: "${AWS_SECRET_ACCESS_KEY}" # This is a secret injected via an environment variable
+          access_key_id: "${AWS_ACCESS_KEY_ID}"         # This is a secret injected via an environment variable
+
+    blocks_storage:
+      s3:
+        bucket_name: prod-cloudlab-mimir-blocks
+    alertmanager_storage:
+      s3:
+        bucket_name: prod-cloudlab-mimir-alertmanager
+    ruler_storage:
+      s3:
+        bucket_name: prod-cloudlab-mimir-ruler
+
+global:
+  extraEnvFrom:
+    - secretRef:
+        name: mimir-bucket
